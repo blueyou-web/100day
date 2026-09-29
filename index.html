@@ -68,10 +68,13 @@
       filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 3px #fff) drop-shadow(0 2px 4px rgba(0,0,0,0.3));
     }
 
+    /* 1. 기본 화이트 */
     .skin-default { 
       background-color: #ffffff; 
       color: #171717; 
     }
+
+    /* 2. 클래식 다크 */
     .skin-dark { 
       background: linear-gradient(180deg, #171717 0%, #262626 60%, #ffffff 100%); 
       color: #ffffff; 
@@ -91,23 +94,84 @@
       border-color: #ffffff !important;
     }
 
+    /* 3. 미드나잇 오로라 (네온 다크) */
+    .skin-aurora {
+      background-color: #121319;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.45) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.4) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.3) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.35) 0px, transparent 55%);
+      color: #ffffff;
+    }
+    .skin-aurora p, .skin-aurora span { color: #e4e4e7 !important; }
+    .skin-aurora h2 { color: #ffffff !important; }
+    .skin-aurora #profileDdayBadge,
+    .skin-aurora #profileStreakBadge,
+    .skin-aurora #profileCodeBadge {
+      background-color: rgba(255, 255, 255, 0.15) !important;
+      color: #fafafa !important;
+      border-color: rgba(255, 255, 255, 0.25) !important;
+    }
+    .skin-aurora #profileHostSettingsBadge {
+      background-color: #ffffff !important;
+      color: #171717 !important;
+      border-color: #ffffff !important;
+    }
+
+    /* 4. 선셋 메쉬 (피치 핑크 + 라벤더 + 살구 + 버터 옐로우) */
     .skin-sunset { 
-      background: linear-gradient(180deg, 
-        rgba(224, 242, 254, 0.95) 0%, 
-        rgba(243, 232, 255, 0.85) 35%, 
-        rgba(254, 226, 226, 0.85) 65%, 
-        #ffffff 100%
-      ); 
+      background-color: #ffffff;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(254, 205, 211, 0.85) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(224, 231, 255, 0.9) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(254, 243, 199, 0.85) 0px, transparent 55%),
+        radial-gradient(at 100% 100%, rgba(255, 228, 230, 0.75) 0px, transparent 50%);
       color: #171717; 
     }
 
+    /* 5. 민트 브리즈 (에메랄드 + 스카이블루 + 레몬 라임 + 쿨 시안) */
     .skin-mint { 
-      background: linear-gradient(180deg, 
-        rgba(236, 253, 245, 0.95) 0%, 
-        rgba(224, 242, 254, 0.75) 60%, 
-        #ffffff 100%
-      ); 
+      background-color: #ffffff;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(209, 250, 229, 0.9) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(224, 242, 254, 0.95) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(236, 252, 203, 0.75) 0px, transparent 55%),
+        radial-gradient(at 100% 100%, rgba(207, 250, 254, 0.85) 0px, transparent 50%);
       color: #171717; 
+    }
+
+    /* 6. 라벤더 드림 (연보라 + 핑크 로즈 + 아이스 블루) */
+    .skin-lavender {
+      background-color: #ffffff;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(233, 213, 255, 0.9) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(251, 207, 232, 0.85) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(219, 234, 254, 0.8) 0px, transparent 55%),
+        radial-gradient(at 100% 100%, rgba(243, 232, 255, 0.85) 0px, transparent 50%);
+      color: #171717; 
+    }
+
+    /* 7. 피치 소르베 (쥬시 코랄 + 살구 + 크림 옐로우) */
+    .skin-peach {
+      background-color: #ffffff;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(254, 215, 170, 0.9) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(254, 205, 211, 0.8) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(254, 249, 195, 0.85) 0px, transparent 55%),
+        radial-gradient(at 100% 100%, rgba(255, 237, 213, 0.8) 0px, transparent 50%);
+      color: #171717; 
+    }
+
+    /* 8. 코지 라떼 (웜 베이지 + 모카 + 크림 샌드) */
+    .skin-latte {
+      background-color: #ffffff;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(245, 238, 230, 0.95) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(238, 228, 215, 0.85) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(229, 217, 201, 0.75) 0px, transparent 55%),
+        radial-gradient(at 100% 100%, rgba(250, 246, 240, 0.9) 0px, transparent 50%);
+      color: #27211d; 
     }
   </style>
 </head>
@@ -623,21 +687,52 @@
             <span id="skinLockedNotice" class="text-[10px] text-neutral-400 font-bold">누적 10회 달성 시 해금</span>
           </div>
           <div class="grid grid-cols-4 gap-2" id="skinSelectorGrid">
+            <!-- 1. 기본 화이트 -->
             <button type="button" onclick="window.app?.selectProfileSkin('skin-default')" class="skin-btn p-2 border-2 border-neutral-900 rounded-xl flex flex-col items-center gap-1 bg-white transition" data-skin="skin-default">
               <div class="w-6 h-6 rounded-full border border-neutral-200 bg-white"></div>
               <span class="text-[10px] font-bold text-neutral-700">기본</span>
             </button>
+
+            <!-- 2. 클래식 다크 -->
             <button type="button" onclick="window.app?.selectProfileSkin('skin-dark')" class="skin-btn p-2 border border-neutral-200 rounded-xl flex flex-col items-center gap-1 bg-neutral-50 transition" data-skin="skin-dark">
               <div class="w-6 h-6 rounded-full bg-neutral-900"></div>
               <span class="text-[10px] font-bold text-neutral-700">다크</span>
             </button>
+
+            <!-- 3. 오로라 다크 -->
+            <button type="button" onclick="window.app?.selectProfileSkin('skin-aurora')" class="skin-btn p-2 border border-neutral-200 rounded-xl flex flex-col items-center gap-1 bg-neutral-50 transition" data-skin="skin-aurora">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-700 via-purple-700 to-emerald-600"></div>
+              <span class="text-[10px] font-bold text-neutral-700">오로라</span>
+            </button>
+
+            <!-- 4. 선셋 메쉬 -->
             <button type="button" onclick="window.app?.selectProfileSkin('skin-sunset')" class="skin-btn p-2 border border-neutral-200 rounded-xl flex flex-col items-center gap-1 bg-neutral-50 transition" data-skin="skin-sunset">
-              <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-sky-200 via-purple-100 to-pink-200"></div>
+              <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-200 via-rose-200 to-indigo-200"></div>
               <span class="text-[10px] font-bold text-neutral-700">선셋</span>
             </button>
+
+            <!-- 5. 민트 브리즈 -->
             <button type="button" onclick="window.app?.selectProfileSkin('skin-mint')" class="skin-btn p-2 border border-neutral-200 rounded-xl flex flex-col items-center gap-1 bg-neutral-50 transition" data-skin="skin-mint">
-              <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-100 to-sky-200"></div>
+              <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-lime-200 via-emerald-200 to-cyan-200"></div>
               <span class="text-[10px] font-bold text-neutral-700">민트</span>
+            </button>
+
+            <!-- 6. 라벤더 드림 -->
+            <button type="button" onclick="window.app?.selectProfileSkin('skin-lavender')" class="skin-btn p-2 border border-neutral-200 rounded-xl flex flex-col items-center gap-1 bg-neutral-50 transition" data-skin="skin-lavender">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-sky-200 via-purple-200 to-pink-200"></div>
+              <span class="text-[10px] font-bold text-neutral-700">라벤더</span>
+            </button>
+
+            <!-- 7. 피치 소르베 -->
+            <button type="button" onclick="window.app?.selectProfileSkin('skin-peach')" class="skin-btn p-2 border border-neutral-200 rounded-xl flex flex-col items-center gap-1 bg-neutral-50 transition" data-skin="skin-peach">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-yellow-200 via-amber-200 to-rose-300"></div>
+              <span class="text-[10px] font-bold text-neutral-700">피치</span>
+            </button>
+
+            <!-- 8. 코지 라떼 -->
+            <button type="button" onclick="window.app?.selectProfileSkin('skin-latte')" class="skin-btn p-2 border border-neutral-200 rounded-xl flex flex-col items-center gap-1 bg-neutral-50 transition" data-skin="skin-latte">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-stone-300 via-orange-100 to-amber-50"></div>
+              <span class="text-[10px] font-bold text-neutral-700">라떼</span>
             </button>
           </div>
         </div>
