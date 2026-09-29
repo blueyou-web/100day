@@ -1,0 +1,3644 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>100Days Challenge</title>
+  
+  <!-- 모바일 웹앱 PWA 전체화면 설정 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="100일 챌린지">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#171717">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Grandiflora+One&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans KR"', 'sans-serif'],
+            insta: ['"Grandiflora One"', 'cursive'],
+            num: ['system-ui', 'sans-serif']
+          },
+          colors: {
+            ig: {
+              primary: '#171717',
+              border: '#E5E5E5',
+              text: '#171717',
+              lightText: '#737373'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .story-ring {
+      background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+      padding: 2.5px;
+      border-radius: 50%;
+    }
+    .story-ring-empty {
+      background: #E5E5E5;
+      padding: 1.5px;
+      border-radius: 50%;
+    }
+    .story-ring-active {
+      background: #171717;
+      padding: 2.5px;
+      border-radius: 50%;
+    }
+    #freeDrawCanvas, #stickerDrawCanvas { touch-action: none; }
+
+    .sticker-art {
+      filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 3px #fff) drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+
+    .skin-default { 
+      background-color: #ffffff; 
+      color: #171717; 
+    }
+    .skin-dark { 
+      background: linear-gradient(180deg, #171717 0%, #262626 60%, #ffffff 100%); 
+      color: #ffffff; 
+    }
+    .skin-dark p, .skin-dark span { color: #e4e4e7 !important; }
+    .skin-dark h2 { color: #ffffff !important; }
+    .skin-dark #profileDdayBadge,
+    .skin-dark #profileStreakBadge,
+    .skin-dark #profileCodeBadge {
+      background-color: rgba(255, 255, 255, 0.12) !important;
+      color: #fafafa !important;
+      border-color: rgba(255, 255, 255, 0.2) !important;
+    }
+    .skin-dark #profileHostSettingsBadge {
+      background-color: #ffffff !important;
+      color: #171717 !important;
+      border-color: #ffffff !important;
+    }
+
+    .skin-sunset { 
+      background: linear-gradient(180deg, 
+        rgba(224, 242, 254, 0.95) 0%, 
+        rgba(243, 232, 255, 0.85) 35%, 
+        rgba(254, 226, 226, 0.85) 65%, 
+        #ffffff 100%
+      ); 
+      color: #171717; 
+    }
+
+    .skin-mint { 
+      background: linear-gradient(180deg, 
+        rgba(236, 253, 245, 0.95) 0%, 
+        rgba(224, 242, 254, 0.75) 60%, 
+        #ffffff 100%
+      ); 
+      color: #171717; 
+    }
+  </style>
+</head>
+<body class="bg-[#FAFAFA] text-ig-text antialiased min-h-screen flex flex-col relative">
+
+  <!-- 0. LANDING / LOGIN OVERLAY -->
+  <div id="landingOverlay" class="fixed inset-0 z-[100] bg-[#FAFAFA] flex flex-col items-center justify-center p-4 transition-opacity duration-300">
+    <div class="text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <h1 class="font-insta text-5xl mb-2 text-neutral-900">100days.challenge</h1>
+      <p class="text-neutral-500 text-sm">친구와 함께하는 작심삼일 탈출기</p>
+    </div>
+    
+    <div id="loginStep1" class="bg-white p-6 rounded-3xl shadow-lg border border-neutral-100 w-full max-w-sm">
+      <form onsubmit="window.app?.handleLogin(event)" class="space-y-4">
+        <div>
+          <input type="text" id="loginId" placeholder="아이디 (영문/숫자)" class="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:bg-white focus:border-neutral-900 outline-none transition">
+        </div>
+        <div>
+          <input type="password" id="loginPw" placeholder="비밀번호 (6자리 이상)" class="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:bg-white focus:border-neutral-900 outline-none transition">
+        </div>
+        <div class="pt-2">
+          <button type="submit" id="btnLogin" class="w-full bg-neutral-900 text-white font-bold py-3.5 rounded-xl hover:bg-black transition active:scale-95 flex justify-center items-center gap-2 shadow-md">
+            <span>로그인 / 시작하기</span>
+          </button>
+          <p class="text-[11px] text-neutral-400 text-center mt-3">아이디가 없다면 자동으로 회원가입이 진행됩니다.</p>
+        </div>
+      </form>
+    </div>
+
+    <div id="loginStep2" class="hidden bg-white p-6 rounded-3xl shadow-lg border border-neutral-100 w-full max-w-sm">
+      <div class="text-center mb-5">
+        <h2 class="font-bold text-xl text-neutral-900 mb-1">환영합니다! 🎉</h2>
+        <p class="text-xs text-neutral-500">초대 코드와 비밀번호를 입력해주세요.</p>
+      </div>
+      <form onsubmit="window.app?.handleInitialRoomCode(event)" class="space-y-3">
+        <div>
+          <input type="text" id="initialRoomCode" placeholder="초대 코드 (예: GOAL-1234 또는 CHAL-100)" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:bg-white focus:border-neutral-900 outline-none uppercase transition text-center font-bold tracking-wider">
+        </div>
+        <div>
+          <input type="password" id="initialRoomPassword" placeholder="방 비밀번호 (필요한 경우)" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:bg-white focus:border-neutral-900 outline-none transition text-center">
+        </div>
+        <div class="pt-2 space-y-2">
+          <button type="submit" class="w-full bg-neutral-900 text-white font-bold py-3.5 rounded-xl hover:bg-black transition active:scale-95 shadow-md">
+            입장하기
+          </button>
+          <button type="button" onclick="window.app?.skipToCreateOwnRoom()" class="w-full bg-neutral-100 text-neutral-700 font-bold py-3.5 rounded-xl hover:bg-neutral-200 transition active:scale-95">
+            건너뛰고 내 방 만들기
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 1. TOP NAVBAR -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-neutral-200">
+    <div class="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-2 cursor-pointer" onclick="window.app?.showHomeView()">
+        <span class="font-insta text-2xl sm:text-3xl tracking-tight select-none">100days.challenge</span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- 🔔 알림 컨테이너 -->
+        <div class="relative" id="notiDropdownContainer">
+          <button onclick="window.app?.toggleNotiDropdown(event)" class="relative p-2 rounded-full border border-neutral-200 hover:border-neutral-300 bg-white text-neutral-800 hover:text-black transition shadow-sm flex items-center justify-center" title="알림">
+            <i data-lucide="bell" class="w-5 h-5 stroke-[1.75]"></i>
+            <span id="notiBadge" class="hidden absolute -top-1 -right-1 bg-neutral-900 text-white text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white shadow">0</span>
+          </button>
+
+          <div id="notiDropdownMenu" class="hidden absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl border border-neutral-200 py-2 z-50 overflow-hidden transform origin-top-right transition-all">
+            <div class="px-4 py-2 border-b border-neutral-100 flex items-center justify-between">
+              <span class="text-xs font-bold text-neutral-900 flex items-center gap-1.5">
+                <i data-lucide="bell" class="w-3.5 h-3.5"></i> 알림
+              </span>
+              <div class="flex items-center gap-2">
+                <button onclick="window.app?.clearAllNotifications()" class="text-[11px] text-neutral-400 hover:text-neutral-900 transition font-medium">모두 읽음</button>
+                <span class="text-neutral-200 text-xs">|</span>
+                <button onclick="window.app?.deleteAllNotifications()" class="text-[11px] text-rose-500 hover:text-rose-700 transition font-medium">전체 비우기</button>
+              </div>
+            </div>
+            <div id="notiList" class="max-h-80 overflow-y-auto divide-y divide-neutral-100 no-scrollbar">
+              <div class="py-10 text-center text-xs text-neutral-400">
+                새로운 알림이 없습니다.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 프로필 드롭다운 -->
+        <div class="relative" id="navDropdownContainer">
+          <button onclick="window.app?.toggleNavDropdown(event)" class="flex items-center gap-1 pl-1 pr-2 py-1 rounded-full border border-neutral-200 hover:border-neutral-300 bg-white transition shadow-sm">
+            <img id="navAvatar" src="https://api.dicebear.com/7.x/notionists/svg?seed=Bear&backgroundColor=f3f4f6" class="w-6 h-6 rounded-full object-cover shrink-0">
+            <i data-lucide="chevron-down" id="navDropdownChevron" class="w-3.5 h-3.5 text-neutral-400 transition-transform duration-200"></i>
+          </button>
+
+          <div id="navDropdownMenu" class="hidden absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-neutral-100 py-1 z-50 overflow-hidden transform origin-top-right transition-all">
+            <button onclick="window.app?.openStampModal(); window.app?.closeNavDropdown()" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-50 text-sm text-neutral-900 font-bold transition">
+              <i data-lucide="plus-square" class="w-4 h-4 text-neutral-900"></i> 게시글 올리기
+            </button>
+            <div class="h-px bg-neutral-100 my-1"></div>
+            <button onclick="window.app?.openRoomSwitchModal(); window.app?.closeNavDropdown()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-neutral-50 text-sm text-neutral-700 transition">
+              <i data-lucide="door-open" class="w-4 h-4"></i> 내 다른 방 이동
+            </button>
+            
+            <div id="navHostSettingsDivider" class="hidden h-px bg-neutral-100 my-1"></div>
+            <button id="navHostSettingsBtn" onclick="window.app?.openEditRoomModal(); window.app?.closeNavDropdown()" class="hidden w-full items-center gap-3 px-4 py-2.5 hover:bg-neutral-50 text-sm text-neutral-700 font-bold transition">
+              <i data-lucide="sliders" class="w-4 h-4 text-neutral-900"></i> 챌린지 방 설정
+            </button>
+
+            <div id="superAdminResetDivider" class="hidden h-px bg-neutral-100 my-1"></div>
+            <button id="superAdminResetBtn" onclick="window.app?.superAdminResetChal100(); window.app?.closeNavDropdown()" class="hidden w-full items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-xs text-amber-700 font-bold transition">
+              <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600"></i> CHAL-100 방 청소
+            </button>
+
+            <div class="h-px bg-neutral-100 my-1"></div>
+            <button onclick="window.app?.openEditProfileModal(); window.app?.closeNavDropdown()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-neutral-50 text-sm text-neutral-700 transition">
+              <i data-lucide="settings" class="w-4 h-4"></i> 프로필 & 스킨 설정
+            </button>
+
+            <button onclick="window.app?.openUpdateNotesModal(); window.app?.closeNavDropdown()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-neutral-50 text-sm text-neutral-700 transition">
+              <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i> 업데이트 노트
+            </button>
+
+            <a href="https://forms.gle/hZr8aEnuRe5ajjHG6" target="_blank" onclick="window.app?.closeNavDropdown()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-neutral-50 text-sm text-neutral-700 transition">
+              <i data-lucide="help-circle" class="w-4 h-4 text-neutral-500"></i> 건의사항
+            </a>
+            <button onclick="window.app?.logout(); window.app?.closeNavDropdown()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-neutral-50 text-sm text-rose-500 font-bold transition">
+              <i data-lucide="log-out" class="w-4 h-4"></i> 로그아웃
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. MAIN CONTENT -->
+  <main class="max-w-2xl mx-auto w-full flex-1 bg-white border-x border-neutral-100 min-h-[calc(100vh-3.5rem)] pb-20">
+    
+    <div id="chal100NoticeBanner" class="hidden bg-neutral-900 text-white px-4 py-2.5 text-xs font-bold flex items-center justify-between">
+      <span class="flex items-center gap-1.5"><i data-lucide="info" class="w-4 h-4 text-amber-400"></i> [공식 방] CHAL-100은 둘러보기 방입니다. 자신만의 챌린지 방을 만들어보세요!</span>
+      <button onclick="window.app?.openCreateRoomModal()" class="bg-white text-neutral-900 px-2.5 py-1 rounded-lg text-[11px] font-extrabold hover:bg-neutral-100 transition shrink-0">내 방 만들기</button>
+    </div>
+
+    <div id="patchNoticeBanner" class="bg-neutral-800 text-white px-4 py-2.5 text-xs font-bold flex items-center justify-between border-t border-neutral-700/50">
+      <span class="flex items-center gap-1.5 truncate mr-2">
+        <i data-lucide="sparkles" class="w-4 h-4 text-amber-400 shrink-0"></i>
+        <span class="truncate">[v0.1.6 업데이트] 방명록 자동 복구 및 대용량 패치 완료!</span>
+      </span>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button onclick="window.app?.openUpdateNotesModal()" class="bg-white text-neutral-900 px-2.5 py-1 rounded-lg text-[11px] font-extrabold hover:bg-neutral-100 transition">업데이트 보러가기</button>
+        <button onclick="window.app?.dismissPatchNotice()" class="text-neutral-400 hover:text-white p-1 rounded-md transition" title="공지 닫기"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+    </div>
+
+    <!-- 스토리 링 -->
+    <div class="pt-4 pb-2 px-4 border-b border-neutral-100">
+      <div id="storyBarContainer" class="flex gap-4 overflow-x-auto no-scrollbar py-2 px-1 items-center">
+        <div id="btnAllTimeline" onclick="window.app?.showTimelineView()" class="flex flex-col items-center gap-1 min-w-[68px] cursor-pointer group shrink-0">
+          <div id="allTimelineRing" class="story-ring-empty group-hover:scale-105 transition-all duration-300">
+            <div class="w-14 h-14 rounded-full border-[2.5px] border-white overflow-hidden bg-neutral-900 flex items-center justify-center aspect-square shrink-0 text-white shadow-sm">
+              <i data-lucide="layers" class="w-6 h-6 stroke-[1.75]"></i>
+            </div>
+          </div>
+          <span id="allTimelineText" class="text-[11px] text-neutral-500 font-medium group-hover:text-neutral-900 truncate w-full text-center px-1 transition-colors">
+            전체 피드
+          </span>
+        </div>
+        
+        <div id="memberTabs" class="flex gap-4 items-center"></div>
+      </div>
+    </div>
+
+    <!-- 프로필 영역 -->
+    <div class="px-4 py-6 transition-all duration-500 skin-default" id="profileHeaderArea">
+      <div class="flex items-center gap-6">
+        <div class="w-[84px] h-[84px] sm:w-[98px] sm:h-[98px] shrink-0 aspect-square rounded-full border border-neutral-200 overflow-hidden relative cursor-pointer group shadow-sm" onclick="window.app?.handleAvatarClick(event)">
+          <img id="profileAvatar" src="" loading="lazy" decoding="async" class="w-full h-full object-cover rounded-full aspect-square block" alt="Profile">
+          <div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center transition-all">
+            <i data-lucide="zoom-in" class="text-white w-6 h-6"></i>
+          </div>
+        </div>
+        
+        <div class="flex-1 min-w-0 flex flex-col gap-1.5">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h2 id="profileUsername" class="text-xl font-bold text-neutral-900 truncate">닉네임</h2>
+            <span id="profileDdayBadge" class="px-2 py-0.5 rounded bg-neutral-100/90 text-neutral-700 text-[10px] font-bold border border-neutral-200/80 font-mono transition-colors">D-99</span>
+            <span id="profileStreakBadge" class="px-2 py-0.5 rounded bg-neutral-100/90 text-neutral-700 text-[10px] font-bold border border-neutral-200/80 flex items-center gap-0.5 transition-colors">🔥 0일 연속</span>
+            <span id="profileCodeBadge" class="px-2 py-0.5 rounded bg-neutral-50/90 text-neutral-600 text-[10px] font-medium border border-neutral-200/80 cursor-pointer hover:bg-neutral-100 transition font-mono" onclick="window.app?.copyRoomCode()">CODE</span>
+            <button id="profileHostSettingsBadge" onclick="window.app?.openEditRoomModal()" class="hidden px-2 py-0.5 rounded bg-neutral-900 text-white text-[10px] font-bold hover:bg-black transition items-center gap-1 shadow-sm">
+              <i data-lucide="sliders" class="w-3 h-3"></i> 방 설정
+            </button>
+          </div>
+          <div class="flex gap-4 text-sm mt-1">
+            <div class="flex flex-col sm:flex-row sm:gap-1"><span class="font-bold text-neutral-900" id="statCompleted">0</span> <span class="text-neutral-400">인증</span></div>
+            <div class="flex flex-col sm:flex-row sm:gap-1"><span class="font-bold text-neutral-900" id="statGoal">100</span> <span class="text-neutral-400">목표</span></div>
+            <div class="flex flex-col sm:flex-row sm:gap-1"><span class="font-bold text-neutral-900" id="statPercent">0%</span> <span class="text-neutral-400">달성</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 text-sm text-neutral-900">
+        <div class="flex items-center gap-1.5 mb-1">
+          <span class="text-xs text-neutral-400 font-mono font-medium" id="profileName">@아이디</span>
+        </div>
+        <p id="profileBio" class="font-normal whitespace-pre-wrap text-neutral-700 leading-relaxed">나의 다짐</p>
+        <p id="profilePeriod" class="text-xs text-neutral-400 mt-1 font-mono">2026.00.00 ~ 2026.00.00</p>
+      </div>
+
+      <div class="mt-3 pt-3 border-t border-neutral-100/60">
+        <div class="flex items-center justify-between">
+          <button onclick="window.app?.toggleBadgeList()" class="text-xs text-neutral-500 hover:text-neutral-800 font-bold flex items-center gap-1.5 transition select-none">
+            <i data-lucide="award" class="w-4 h-4 text-amber-500"></i>
+            <span>계정 업적 & 뱃지 (<span id="globalCompletedCountLabel">0</span>회 누적 달성)</span>
+            <i data-lucide="chevron-down" id="badgeToggleIcon" class="w-3.5 h-3.5 transition-transform duration-200"></i>
+          </button>
+        </div>
+        <div id="badgeContainer" class="hidden flex-wrap gap-1.5 pt-2.5 transition-all"></div>
+      </div>
+
+      <div class="flex gap-2 mt-4" id="profileActionButtons">
+        <button onclick="window.app?.openStampModal()" class="flex-1 py-2 bg-neutral-900 hover:bg-black text-white text-sm font-bold rounded-xl transition shadow-sm">오늘 인증하기</button>
+        <button onclick="window.app?.openEditProfileModal()" class="flex-1 py-2 bg-neutral-100/90 hover:bg-neutral-200 text-neutral-800 text-sm font-bold rounded-xl transition">프로필 & 스킨</button>
+      </div>
+    </div>
+
+    <!-- 3개 탭 내비게이션 -->
+    <div class="flex border-t border-neutral-200 text-xs sm:text-sm font-bold text-neutral-400" id="mainTabNav">
+      <button onclick="window.app?.switchTab('grid')" id="tabGrid" class="flex-1 py-3 text-center border-t border-neutral-900 -mt-px flex items-center justify-center gap-1 sm:gap-2 text-neutral-900 transition">
+        <i data-lucide="grid" class="w-4 h-4"></i> 피드
+      </button>
+      <button onclick="window.app?.switchTab('stampboard')" id="tabStampboard" class="flex-1 py-3 text-center flex items-center justify-center gap-1 sm:gap-2 hover:text-neutral-600 transition border-t border-transparent -mt-px">
+        <i data-lucide="layout-grid" class="w-4 h-4"></i> 스탬프판
+      </button>
+      <button onclick="window.app?.switchTab('cheer')" id="tabCheer" class="flex-1 py-3 text-center flex items-center justify-center gap-1 sm:gap-2 hover:text-neutral-600 transition border-t border-transparent -mt-px">
+        <i data-lucide="message-square" class="w-4 h-4"></i> 방명록 (<span id="cheerCount">0</span>)
+      </button>
+    </div>
+
+    <section id="sectionGrid" class="grid grid-cols-3 gap-0.5 sm:gap-1 bg-white"></section>
+
+    <section id="sectionStampboard" class="hidden p-4">
+      <div class="bg-neutral-50 rounded-2xl p-4 border border-neutral-200">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h3 class="font-bold text-sm text-neutral-800 flex items-center gap-1.5">
+              <i data-lucide="check" class="w-4 h-4 text-neutral-900"></i>
+              <span id="stampboardTitle">챌린지 스탬프판</span>
+            </h3>
+            <p class="text-[11px] text-neutral-400 mt-0.5">칸을 누르면 해당 인증 글로 이동합니다.</p>
+          </div>
+          <span class="text-xs font-mono font-bold bg-white px-2.5 py-1 rounded-full border border-neutral-200 text-neutral-800 shadow-sm" id="stampboardRate">0 / 0</span>
+        </div>
+        <div id="stampGrid" class="grid grid-cols-5 sm:grid-cols-10 gap-1.5 pt-2"></div>
+      </div>
+    </section>
+
+    <section id="sectionTimeline" class="hidden divide-y divide-neutral-100 bg-white">
+      <div class="px-4 py-3 bg-neutral-50/80 border-b border-neutral-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="layers" class="w-4 h-4 text-neutral-900"></i>
+          <span class="text-xs font-bold text-neutral-900">방 전체 피드 타임라인</span>
+        </div>
+        <button onclick="window.app?.showHomeView()" class="text-xs text-neutral-400 hover:text-neutral-900 transition">내 피드로 돌아가기 ✕</button>
+      </div>
+      <div id="timelineContainer" class="space-y-4 py-2"></div>
+    </section>
+
+    <section id="sectionCheer" class="hidden p-4">
+      <div class="bg-neutral-50 rounded-2xl p-4 border border-neutral-200 mb-4">
+        <h3 class="text-xs font-bold text-neutral-800 mb-2 flex items-center gap-1.5">
+          <i data-lucide="heart" class="w-4 h-4 text-neutral-800"></i>
+          <span id="cheerTargetName">친구</span>님에게 한마디
+        </h3>
+        <form onsubmit="window.app?.submitCheer(event)" class="flex gap-2">
+<input type="text" id="cheerInput" autocomplete="off" placeholder="따뜻한 응원 한마디..." required class="flex-1 bg-white border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">          <button type="submit" class="bg-neutral-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-black transition active:scale-95 shadow-sm">게시</button>
+        </form>
+      </div>
+      <div id="cheerList" class="space-y-4 divide-y divide-neutral-100"></div>
+    </section>
+
+  </main>
+
+  <div id="modalAvatarZoom" class="fixed inset-0 z-[200] bg-black/90 hidden flex items-center justify-center p-4 backdrop-blur-md" onclick="window.app?.closeAvatarZoom()">
+    <div class="relative max-w-sm w-full flex flex-col items-center" onclick="event.stopPropagation()">
+      <button onclick="window.app?.closeAvatarZoom()" class="absolute -top-12 right-0 text-white/80 hover:text-white p-2"><i data-lucide="x" class="w-7 h-7"></i></button>
+      <img id="zoomAvatarImg" src="" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-2xl shadow-2xl border border-white/10">
+      <p id="zoomAvatarName" class="text-white font-bold text-base mt-4"></p>
+    </div>
+  </div>
+
+  <div id="modalUpdateNotes" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 hidden backdrop-blur-sm">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="p-4 border-b border-neutral-100 flex items-center justify-between">
+        <h3 class="font-bold text-base text-neutral-900 flex items-center gap-1.5">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i> 업데이트 노트
+        </h3>
+        <button onclick="window.app?.closeModal('modalUpdateNotes')" class="text-neutral-400 hover:text-neutral-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-5 overflow-y-auto no-scrollbar space-y-5 text-sm">
+        
+        <div class="border-l-2 border-neutral-900 pl-3.5 space-y-1.5">
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-sm text-neutral-900">v0.1.6</span>
+            <span class="text-[10px] bg-neutral-900 text-white px-2 py-0.5 rounded-full font-bold">LATEST</span>
+          </div>
+          <ul class="text-xs text-neutral-600 list-disc list-inside space-y-1 leading-relaxed">
+            <li><strong>방명록 데이터 안전 복구</strong>: 기존 방 내부에 저장되어 있던 방명록 글들을 분리된 독립 컬렉션으로 무손실 자동 마이그레이션.</li>
+            <li><strong>방명록 하이브리드 병합</strong>: 레거시 방명록과 신규 방명록이 누락 없이 하나로 합쳐져 노출되도록 보완.</li>
+            <li><strong>1MB 초과 방지</strong>: 대용량 텍스트/이미지 누적을 근본적으로 차단.</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 게시글 상세 모달 -->
+  <div id="modalPostDetail" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-2 sm:p-4 hidden backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-2xl w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="px-4 py-3 border-b border-neutral-100 flex items-center justify-between bg-white">
+        <div class="flex items-center gap-2.5">
+          <img id="detailAvatar" src="" loading="lazy" decoding="async" class="w-8 h-8 rounded-full border border-neutral-200 object-cover aspect-square">
+          <div>
+            <div class="text-sm font-bold text-neutral-900 leading-tight" id="detailUsername">username</div>
+            <div class="text-[10px] text-neutral-400 font-mono" id="detailDate">00일차 • 날짜</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-1">
+          <button id="btnOpenStickerDrawer" onclick="window.app?.openStickerDrawer()" class="text-amber-700 bg-amber-50 hover:bg-amber-100 p-1.5 transition flex items-center gap-1 text-xs font-bold rounded-lg px-2 shadow-sm border border-amber-200">
+            <i data-lucide="palette" class="w-3.5 h-3.5"></i> 스티커 붙이기
+          </button>
+          <button onclick="window.app?.generateStoryShareCard(window.app.currentViewingPost)" class="text-neutral-700 hover:text-black p-1.5 transition flex items-center gap-1 text-xs font-medium bg-neutral-100 hover:bg-neutral-200 rounded-lg px-2">
+            <i data-lucide="share-2" class="w-3.5 h-3.5"></i> 스토리 카드
+          </button>
+          <div id="detailOwnerActions" class="hidden items-center gap-1">
+            <button onclick="window.app?.openEditPostModal(window.app.currentViewingPost)" class="text-neutral-400 hover:text-neutral-900 p-1.5 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+            <button onclick="window.app?.deletePost(window.app.currentViewingPost.id)" class="text-neutral-400 hover:text-rose-500 p-1.5 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>
+          <button onclick="window.app?.closeModal('modalPostDetail')" class="text-neutral-400 hover:text-neutral-900 p-1 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+      </div>
+
+      <div class="relative w-full aspect-square bg-neutral-100 flex items-center justify-center overflow-hidden select-none" id="detailImageWrapper">
+        <img id="detailImage" src="" loading="lazy" decoding="async" class="w-full h-full object-cover select-none pointer-events-none">
+        <div id="detailDayBadge" class="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-xs font-bold font-num shadow-sm pointer-events-none">
+          #1일차
+        </div>
+        
+        <div id="detailStickerLayer" class="absolute inset-0 pointer-events-none"></div>
+
+        <div id="stickerAdjustContainer" class="absolute inset-0 hidden pointer-events-auto touch-none">
+          <div id="activeStickerBox" class="absolute cursor-move border-2 border-dashed border-blue-500 rounded-lg p-1.5 bg-blue-500/10 flex items-center justify-center" style="width: 130px; height: 130px; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(0deg);">
+            <div id="stickerRotateHandle" class="absolute -top-7 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg cursor-grab active:cursor-grabbing">
+              <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+            </div>
+            <img id="activeStickerPreviewImg" class="w-full h-full object-contain sticker-art pointer-events-none" src="">
+          </div>
+
+          <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-neutral-900/90 backdrop-blur-md text-white px-3 py-1.5 rounded-full shadow-2xl text-xs font-bold">
+            <span class="text-neutral-300">위치/각도 조절</span>
+            <button onclick="window.app?.saveAdjustedSticker()" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded-full text-white font-extrabold transition">완료</button>
+            <button onclick="window.app?.cancelAdjustSticker()" class="text-neutral-400 hover:text-white px-1">취소</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 flex-1 flex flex-col justify-between overflow-y-auto bg-white">
+        <div class="space-y-3">
+          <div class="flex items-center gap-4">
+            <button onclick="window.app?.toggleLike()" class="group transition active:scale-125">
+              <i id="detailHeartIcon" data-lucide="heart" class="w-6 h-6 text-neutral-800 transition"></i>
+            </button>
+            <button onclick="document.getElementById('detailCommentInput').focus()" class="text-neutral-800 hover:text-neutral-500 transition">
+              <i data-lucide="message-circle" class="w-6 h-6"></i>
+            </button>
+          </div>
+          <div class="text-sm font-bold text-neutral-900">
+            좋아요 <span id="detailLikesCount">0</span>개
+          </div>
+          
+          <div class="text-sm leading-relaxed text-neutral-800">
+            <span id="detailCaptionAuthor" class="font-bold mr-1.5">username</span>
+            <span id="detailCaptionText" class="text-neutral-700 whitespace-pre-wrap"></span>
+          </div>
+
+          <div id="detailCommentsList" class="pt-2 border-t border-neutral-100 space-y-2.5 text-sm mt-3"></div>
+        </div>
+
+        <form onsubmit="window.app?.submitPostComment(event)" class="mt-4 pt-3 border-t border-neutral-100 flex items-center gap-2">
+<input type="text" id="detailCommentInput" autocomplete="off" placeholder="댓글 달기..." class="flex-1 text-sm text-neutral-800 focus:outline-none bg-transparent py-1">          <button type="submit" class="text-neutral-900 hover:text-black font-bold px-2 py-1 text-sm transition">게시</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 스티커 그리기 모달 -->
+  <div id="modalStickerDraw" class="fixed inset-0 z-[80] bg-black/80 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col">
+      <div class="p-4 border-b border-neutral-100 flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-base text-neutral-900 flex items-center gap-1.5">
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i> 스티커 직접 그리기
+          </h3>
+          <p class="text-[11px] text-neutral-400 mt-0.5">그린 그림이 외곽선 스티커가 되어 사진에 붙습니다.</p>
+        </div>
+        <button onclick="window.app?.closeModal('modalStickerDraw')" class="text-neutral-400 hover:text-neutral-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="p-4">
+        <div class="relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-neutral-200 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:12px_12px]">
+          <canvas id="stickerDrawCanvas" width="360" height="360" class="w-full h-full cursor-crosshair"></canvas>
+          <button onclick="window.app?.clearStickerCanvas()" class="absolute top-2.5 right-2.5 bg-white/90 border border-neutral-200 text-rose-500 text-xs px-2.5 py-1 rounded-lg font-bold shadow-sm hover:bg-rose-50 transition">
+            지우기
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between mt-3 px-1">
+          <div class="flex gap-2" id="stickerPalette">
+            <button type="button" data-sticker-color="#ef4444" onclick="window.app?.setStickerPenColor('#ef4444')" class="w-7 h-7 rounded-full bg-red-500 hover:scale-110 transition shadow-sm"></button>
+            <button type="button" data-sticker-color="#f59e0b" onclick="window.app?.setStickerPenColor('#f59e0b')" class="w-7 h-7 rounded-full bg-amber-500 hover:scale-110 transition shadow-sm"></button>
+            <button type="button" data-sticker-color="#10b981" onclick="window.app?.setStickerPenColor('#10b981')" class="w-7 h-7 rounded-full bg-emerald-500 hover:scale-110 transition shadow-sm"></button>
+            <button type="button" data-sticker-color="#3b82f6" onclick="window.app?.setStickerPenColor('#3b82f6')" class="w-7 h-7 rounded-full bg-blue-500 hover:scale-110 transition shadow-sm"></button>
+            <button type="button" data-sticker-color="#171717" onclick="window.app?.setStickerPenColor('#171717')" class="w-7 h-7 rounded-full bg-neutral-900 hover:scale-110 transition shadow-sm"></button>
+          </div>
+          <span class="text-[11px] text-neutral-400 font-medium">선 굵기: 10px</span>
+        </div>
+
+        <button onclick="window.app?.startStickerPlacement()" class="w-full mt-4 py-3 bg-neutral-900 text-white font-bold rounded-xl hover:bg-black transition active:scale-95 shadow-md flex items-center justify-center gap-1.5">
+          <i data-lucide="move" class="w-4 h-4"></i> 위치 & 각도 맞추러 가기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 프로필 편집 & 스킨 설정 모달 -->
+  <div id="modalEditProfile" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 hidden backdrop-blur-sm">
+    <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between p-4 border-b border-neutral-100">
+        <div>
+          <h3 class="font-bold text-neutral-900">프로필 & 스킨 설정</h3>
+          <p class="text-[10px] text-neutral-400 font-mono" id="editProfileRoomScopeLabel">현재 방 전용 프로필</p>
+        </div>
+        <button onclick="window.app?.closeModal('modalEditProfile')" class="text-neutral-400 p-1 hover:text-neutral-900 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-5 space-y-4 overflow-y-auto no-scrollbar">
+        <div class="flex flex-col items-center gap-3">
+           <div class="w-24 h-24 rounded-full border border-neutral-200 overflow-hidden relative shadow-sm aspect-square">
+             <img id="editProfileAvatarPreview" class="w-full h-full object-cover block rounded-full aspect-square" src="" loading="lazy">
+           </div>
+           <label class="text-xs font-bold text-neutral-700 cursor-pointer hover:text-black transition px-3 py-1.5 rounded-lg border border-neutral-200 bg-neutral-50 hover:bg-neutral-100">
+             사진 변경
+             <input type="file" accept="image/*" class="hidden" onchange="window.app?.handleProfileImageUpload(event)">
+           </label>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-neutral-500 mb-1.5">이름 (닉네임)</label>
+          <input type="text" id="editProfileName" placeholder="예: 관리자" class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm outline-none focus:border-neutral-900 focus:bg-white transition">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-neutral-500 mb-1.5">아이디</label>
+          <div class="relative flex items-center">
+            <span class="absolute left-3.5 text-neutral-400 font-bold text-sm">@</span>
+            <input type="text" id="editProfileHandle" placeholder="user884" class="w-full pl-8 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm outline-none focus:border-neutral-900 focus:bg-white transition">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-neutral-500 mb-1.5">나의 다짐</label>
+          <input type="text" id="editProfileBio" placeholder="하루하루 파이팅!" class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm outline-none focus:border-neutral-900 focus:bg-white transition">
+        </div>
+
+        <div class="p-3 bg-neutral-50 rounded-xl border border-neutral-200 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-bold text-neutral-800 block">내 계정 누적 인증</span>
+            <span class="text-[10px] text-neutral-400">실제 작성한 글 수와 동기화</span>
+          </div>
+          <button type="button" onclick="window.app?.syncMyCompletedStampsWithDB(true)" class="px-2.5 py-1.5 bg-white border border-neutral-300 hover:border-neutral-900 rounded-lg text-xs font-bold text-neutral-700 hover:text-neutral-900 transition flex items-center gap-1 shadow-sm">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 동기화 복구
+          </button>
+        </div>
+
+        <div class="pt-3 border-t border-neutral-100">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+              <span>프로필 배경 스킨</span>
+            </label>
+            <span id="skinLockedNotice" class="text-[10px] text-neutral-400 font-bold">누적 10회 달성 시 해금</span>
+          </div>
+          <div class="grid grid-cols-4 gap-2" id="skinSelectorGrid">
+            <button type="button" onclick="window.app?.selectProfileSkin('skin-default')" class="skin-btn p-2 border-2 border-neutral-900 rounded-xl flex flex-col items-center gap-1 bg-white transition" data-skin="skin-default">
+              <div class="w-6 h-6 rounded-full border border-neutral-200 bg-white"></div>
+              <span class="text-[10px] font-bold text-neutral-700">기본</span>
+            </button>
+            <button type="button" onclick="window.app?.selectProfileSkin('skin-dark')" class="skin-btn p-2 border border-neutral-200 rounded-xl flex flex-col items-center gap-1 bg-neutral-50 transition" data-skin="skin-dark">
+              <div class="w-6 h-6 rounded-full bg-neutral-900"></div>
+              <span class="text-[10px] font-bold text-neutral-700">다크</span>
+            </button>
+            <button type="button" onclick="window.app?.selectProfileSkin('skin-sunset')" class="skin-btn p-2 border border-neutral-200 rounded-xl flex flex-col items-center gap-1 bg-neutral-50 transition" data-skin="skin-sunset">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-sky-200 via-purple-100 to-pink-200"></div>
+              <span class="text-[10px] font-bold text-neutral-700">선셋</span>
+            </button>
+            <button type="button" onclick="window.app?.selectProfileSkin('skin-mint')" class="skin-btn p-2 border border-neutral-200 rounded-xl flex flex-col items-center gap-1 bg-neutral-50 transition" data-skin="skin-mint">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-100 to-sky-200"></div>
+              <span class="text-[10px] font-bold text-neutral-700">민트</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="adminCheatSection" class="hidden p-3 bg-neutral-100 rounded-xl border border-neutral-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-neutral-700 flex items-center gap-1">
+              <i data-lucide="wrench" class="w-3.5 h-3.5 text-neutral-600"></i> 관리자 누적 횟수 수동 설정
+            </span>
+            <span class="text-[10px] text-neutral-500 font-mono">현재: <strong id="cheatCurrentStampsVal">0</strong>회</span>
+          </div>
+          
+          <div class="flex gap-2">
+            <input type="number" id="cheatDirectInput" min="0" max="999" placeholder="숫자 입력" class="w-24 px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs font-mono font-bold outline-none focus:border-neutral-900">
+            <button type="button" onclick="window.app?.cheatSetStampsDirect()" class="flex-1 py-1.5 bg-neutral-900 text-white rounded-lg text-xs font-bold hover:bg-black transition">반영하기</button>
+            <button type="button" onclick="window.app?.cheatResetStamps()" class="px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold hover:bg-rose-100 transition">초기화</button>
+          </div>
+        </div>
+
+        <button onclick="window.app?.saveProfileEdit()" class="w-full py-3 bg-neutral-900 hover:bg-black text-white font-bold rounded-xl mt-2 transition active:scale-95 shadow-md">이 방에만 저장하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 게시글 올리기 모달 -->
+  <div id="modalStamp" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 hidden backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between p-4 border-b border-neutral-100">
+        <h3 class="font-bold text-base text-neutral-900" id="stampModalTitle">새 게시물 만들기</h3>
+        <button onclick="window.app?.closeModal('modalStamp')" class="text-neutral-400 hover:text-neutral-900 p-1 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      
+      <div class="p-4 overflow-y-auto no-scrollbar">
+        <div class="flex gap-4 mb-4">
+          <div class="flex-1">
+            <label class="block text-xs font-bold text-neutral-500 mb-1">인증 일차</label>
+            <div class="px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-mono font-bold text-neutral-900" id="stampDayLabel">Day 1</div>
+          </div>
+          <div class="flex-1">
+            <label class="block text-xs font-bold text-neutral-500 mb-1">실천 날짜</label>
+            <input type="date" id="stampDate" onchange="window.app?.updateStampDayFromDate()" class="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 outline-none">
+          </div>
+        </div>
+
+        <div class="flex gap-2 p-1 bg-neutral-100 rounded-xl mb-4">
+          <button onclick="window.app?.switchStampMode('photo')" id="tabMode-photo" class="flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg bg-white shadow-sm text-neutral-900 transition">📷 사진</button>
+          <button onclick="window.app?.switchStampMode('draw')" id="tabMode-draw" class="flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg text-neutral-500 hover:text-neutral-900 transition">🎨 그리기</button>
+          <button onclick="window.app?.switchStampMode('text')" id="tabMode-text" class="flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg text-neutral-500 hover:text-neutral-900 transition">✍️ 텍스트</button>
+        </div>
+
+        <div id="modePanel-photo" class="block">
+          <label class="border-2 border-dashed border-neutral-300 bg-neutral-50 hover:bg-neutral-100 rounded-2xl aspect-square flex flex-col items-center justify-center gap-3 cursor-pointer transition relative overflow-hidden group">
+            <input type="file" id="photoInput" accept="image/*" class="hidden" onchange="window.app?.handlePhotoUpload(event)">
+            <div id="photoPreviewContainer" class="absolute inset-0 hidden">
+              <img id="photoPreview" class="w-full h-full object-cover">
+              <div class="absolute inset-0 bg-black/40 hidden group-hover:flex flex-col items-center justify-center text-white backdrop-blur-sm transition">
+                <i data-lucide="refresh-cw" class="w-6 h-6 mb-1"></i>
+                <span class="font-bold text-sm">사진 변경</span>
+              </div>
+            </div>
+            <div id="photoUploadUI" class="flex flex-col items-center">
+              <div class="w-12 h-12 rounded-full bg-neutral-200/60 flex items-center justify-center text-neutral-700 mb-2 shadow-sm">
+                <i data-lucide="image-plus" class="w-6 h-6"></i>
+              </div>
+              <span class="font-bold text-sm text-neutral-700">사진 선택하기</span>
+              <span class="text-xs text-neutral-400 mt-1" id="photoStatText">1:1 크롭 & 타임스탬프</span>
+            </div>
+          </label>
+        </div>
+
+        <div id="modePanel-draw" class="hidden">
+          <div class="border border-neutral-200 rounded-2xl overflow-hidden bg-white aspect-square relative shadow-inner">
+            <canvas id="freeDrawCanvas" width="400" height="400" class="w-full h-full cursor-crosshair bg-[#f8f9fa]"></canvas>
+            <div class="absolute bottom-4 left-4 right-4 flex items-center justify-between bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-full shadow-md border border-neutral-200">
+              <div class="flex gap-2.5">
+                <button onclick="window.app?.setPenColor('#171717')" class="w-6 h-6 rounded-full bg-neutral-900 ring-2 ring-offset-1 ring-neutral-400 transition hover:scale-110"></button>
+                <button onclick="window.app?.setPenColor('#737373')" class="w-6 h-6 rounded-full bg-neutral-500 transition hover:scale-110"></button>
+                <button onclick="window.app?.setPenColor('#ef4444')" class="w-6 h-6 rounded-full bg-red-500 transition hover:scale-110"></button>
+                <button onclick="window.app?.setPenColor('#3b82f6')" class="w-6 h-6 rounded-full bg-blue-500 transition hover:scale-110"></button>
+              </div>
+              <button onclick="window.app?.clearCanvas()" class="text-xs text-rose-500 font-bold px-2 hover:underline">비우기</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="modePanel-text" class="hidden">
+          <div class="rounded-2xl overflow-hidden shadow-inner border border-neutral-200 aspect-square relative">
+            <canvas id="textCardCanvas" width="480" height="480" class="w-full h-full block"></canvas>
+          </div>
+          <div class="flex items-center gap-2.5 mt-3">
+            <span class="text-xs font-bold text-neutral-400 mr-1">테마</span>
+            <button onclick="window.app?.setTextCardTheme(0)" data-theme-swatch="0" class="w-7 h-7 rounded-full border-2 border-neutral-900 bg-white shrink-0 transition"></button>
+            <button onclick="window.app?.setTextCardTheme(1)" data-theme-swatch="1" class="w-7 h-7 rounded-full border-2 border-neutral-200 bg-neutral-900 shrink-0 transition"></button>
+            <button onclick="window.app?.setTextCardTheme(2)" data-theme-swatch="2" class="w-7 h-7 rounded-full border-2 border-neutral-200 shrink-0 transition" style="background:linear-gradient(135deg,#262626,#525252)"></button>
+            <button onclick="window.app?.setTextCardTheme(3)" data-theme-swatch="3" class="w-7 h-7 rounded-full border-2 border-neutral-200 shrink-0 transition" style="background:linear-gradient(135deg,#F97316,#EC4899)"></button>
+          </div>
+          <textarea id="textCardInput" rows="3" maxlength="120" oninput="window.app?.renderTextCard()" class="w-full mt-3 px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm outline-none focus:border-neutral-900 focus:bg-white transition resize-none" placeholder="오늘의 한마디를 적어보세요"></textarea>
+        </div>
+
+        <div class="mt-4">
+          <label class="block text-xs font-bold text-neutral-500 mb-1">메모 / 일기</label>
+          <textarea id="stampCaption" rows="3" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm outline-none focus:border-neutral-900 focus:bg-white transition resize-none" placeholder="오늘의 실천 내용을 간단히 적어보세요"></textarea>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-neutral-100 bg-white">
+        <button onclick="window.app?.saveCurrentStamp()" id="stampSubmitBtn" class="w-full py-3.5 bg-neutral-900 hover:bg-black text-white font-bold rounded-xl active:scale-[0.98] transition shadow-sm text-sm">피드에 올리기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 통합 1:1 사진 크롭 모달 -->
+  <div id="modalCropper" class="fixed inset-0 z-[70] bg-black/85 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col">
+      <div class="p-4 border-b border-neutral-100 flex items-center justify-between">
+        <h3 class="font-bold text-base text-neutral-900" id="cropperModalTitle">사진 자르기 (1:1)</h3>
+        <button onclick="window.app?.cancelCrop()" class="text-neutral-400 hover:text-neutral-900 p-1 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div id="cropperViewport" class="relative w-full aspect-square overflow-hidden bg-neutral-900 touch-none select-none cursor-move">
+        <img id="cropperImage" src="" class="absolute top-0 left-0 max-w-none origin-top-left select-none pointer-events-none" draggable="false">
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="zoom-out" class="w-4 h-4 text-neutral-400 shrink-0"></i>
+          <input type="range" id="cropperZoom" min="100" max="300" value="100" class="flex-1 accent-neutral-900" oninput="window.app?.onCropZoomChange(this.value)">
+          <i data-lucide="zoom-in" class="w-4 h-4 text-neutral-400 shrink-0"></i>
+        </div>
+        
+        <label id="cropTimestampContainer" class="flex items-center justify-between p-2.5 bg-neutral-50 rounded-xl border border-neutral-200 cursor-pointer select-none">
+          <span class="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
+            <i data-lucide="stamp" class="w-4 h-4 text-neutral-800"></i> 미니멀 타임스탬프 스티커 넣기
+          </span>
+          <input type="checkbox" id="cropTimestampToggle" checked class="w-4 h-4 accent-neutral-900 rounded">
+        </label>
+
+        <button onclick="window.app?.applyCrop()" class="w-full py-3 bg-neutral-900 hover:bg-black text-white font-bold rounded-xl transition active:scale-95">완료</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 방 설정 모달 -->
+  <div id="modalEditRoom" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 hidden backdrop-blur-sm">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between p-4 border-b border-neutral-100">
+        <h3 class="font-bold text-base text-neutral-900 flex items-center gap-1.5">
+          <i data-lucide="sliders" class="w-4 h-4 text-neutral-900"></i> 방 설정 및 관리 (방장)
+        </h3>
+        <button onclick="window.app?.closeModal('modalEditRoom')" class="text-neutral-400 p-1 hover:text-neutral-900 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-5 space-y-5 overflow-y-auto no-scrollbar">
+        <form onsubmit="window.app?.saveRoomSettings(event)" class="space-y-4">
+          <div class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">방 기본 정보</div>
+          <div>
+            <label class="block text-xs font-bold text-neutral-500 mb-1.5">방 이름</label>
+            <input type="text" id="editRoomTitle" required class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm outline-none focus:border-neutral-900 focus:bg-white transition">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-neutral-500 mb-1.5">목표 일수 (일)</label>
+              <input type="number" id="editRoomGoalDays" min="1" max="999" required class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm outline-none focus:border-neutral-900 focus:bg-white transition font-mono">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-neutral-500 mb-1.5">시작 날짜</label>
+              <input type="date" id="editRoomStartDate" required class="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 outline-none">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-neutral-500 mb-1.5">최대 인원수</label>
+              <input type="number" id="editRoomMaxMembers" min="1" max="50" required class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm outline-none focus:border-neutral-900 focus:bg-white transition font-mono">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-neutral-500 mb-1.5">방 비밀번호 (선택)</label>
+              <input type="text" id="editRoomPassword" placeholder="공백 시 비밀번호 없음" class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm outline-none focus:border-neutral-900 focus:bg-white transition font-mono">
+            </div>
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-neutral-900 hover:bg-black text-white text-sm font-bold rounded-xl transition active:scale-95 shadow-sm">방 정보 저장</button>
+        </form>
+
+        <div class="h-px bg-neutral-100 my-2"></div>
+
+        <div>
+          <div class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">참여 멤버 관리</div>
+          <div id="roomMemberList" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+        </div>
+
+        <div class="h-px bg-neutral-100 my-2"></div>
+
+        <div class="pt-1">
+          <button type="button" onclick="window.app?.deleteCurrentRoom()" class="w-full py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl text-sm transition border border-rose-100 flex items-center justify-center gap-2">
+            <i data-lucide="trash-2" class="w-4 h-4"></i> 챌린지 방 폭파하기 (삭제)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 방 이동 및 참가 모달 -->
+  <div id="modalSwitchRoom" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 hidden backdrop-blur-sm">
+    <div class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-sm">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-base text-neutral-900">내 챌린지 방 목록</h3>
+        <button onclick="window.app?.closeModal('modalSwitchRoom')" class="text-neutral-400 hover:text-neutral-900 transition p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div id="roomSelectList" class="space-y-2 max-h-60 overflow-y-auto pr-1 no-scrollbar mb-4"></div>
+      
+      <div class="bg-neutral-50 p-3.5 rounded-xl border border-neutral-200 mb-4 space-y-2.5">
+        <label class="block text-xs font-bold text-neutral-500">초대 코드로 참가하기</label>
+        <input type="text" id="joinRoomInput" placeholder="초대 코드 (예: GOAL-1234)" class="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm outline-none focus:border-neutral-900 uppercase font-mono font-bold tracking-wider">
+        <input type="password" id="joinRoomPasswordInput" placeholder="방 비밀번호 (필요한 경우)" class="w-full px-3 py-2.5 border border-neutral-200 rounded-lg text-sm outline-none focus:border-neutral-900">
+        <button onclick="window.app?.joinRoomByCode()" class="w-full bg-neutral-900 text-white font-bold py-2.5 rounded-lg hover:bg-black transition shadow-sm">입장하기</button>
+      </div>
+
+      <div class="pt-2 border-t border-neutral-100">
+        <button onclick="window.app?.openCreateRoomModal()" class="w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-neutral-200 text-neutral-900 font-bold rounded-xl hover:bg-neutral-50 transition shadow-sm">
+          <i data-lucide="plus" class="w-4 h-4"></i> 새 방 만들기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 새 방 만들기 모달 -->
+  <div id="modalCreateRoom" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 hidden backdrop-blur-sm">
+    <div class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl">
+      <div class="flex justify-between items-center mb-4 border-b border-neutral-100 pb-3">
+        <h3 class="font-bold text-base text-neutral-900">새 챌린지 시작</h3>
+        <button onclick="window.app?.closeModal('modalCreateRoom')" class="text-neutral-400 hover:text-neutral-900 transition p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="window.app?.createNewRoom(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-neutral-500 mb-1.5">챌린지 목표 기간</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button type="button" onclick="window.app?.setCreateDays(7)" class="create-day-btn py-2 border border-neutral-200 rounded-lg font-bold text-sm text-neutral-600 bg-neutral-50 hover:border-neutral-900 transition" data-days="7">7일</button>
+            <button type="button" onclick="window.app?.setCreateDays(10)" class="create-day-btn py-2 border border-neutral-200 rounded-lg font-bold text-sm text-neutral-600 bg-neutral-50 hover:border-neutral-900 transition" data-days="10">10일</button>
+            <button type="button" onclick="window.app?.setCreateDays(30)" class="create-day-btn py-2 border border-neutral-200 rounded-lg font-bold text-sm text-neutral-600 bg-neutral-50 hover:border-neutral-900 transition" data-days="30">30일</button>
+            <button type="button" onclick="window.app?.setCreateDays(100)" class="create-day-btn py-2 border-2 border-neutral-900 rounded-lg font-bold text-sm text-neutral-900 bg-neutral-100 transition" data-days="100">100일</button>
+          </div>
+          <div class="mt-2 flex items-center gap-2">
+            <input type="number" id="createDaysCustom" min="1" max="999" placeholder="직접 입력 (예: 18)" class="flex-1 px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-lg text-sm outline-none focus:border-neutral-900 focus:bg-white transition" oninput="window.app?.setCreateDaysCustom(this.value)">
+            <span class="text-xs text-neutral-400 font-bold shrink-0">일</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-neutral-500 mb-1.5">방 이름</label>
+          <input type="text" id="createRoomTitle" placeholder="예: 18일 그림 완성 루틴" required class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm outline-none focus:border-neutral-900 focus:bg-white transition">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-neutral-500 mb-1.5">최대 인원수</label>
+            <input type="number" id="createRoomMaxMembers" min="1" max="50" value="8" required class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm outline-none focus:border-neutral-900 focus:bg-white transition font-mono">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-neutral-500 mb-1.5">방 비밀번호 (선택)</label>
+            <input type="text" id="createRoomPassword" placeholder="비어있으면 자유 입장" class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm outline-none focus:border-neutral-900 focus:bg-white transition font-mono">
+          </div>
+        </div>
+        <button type="submit" class="w-full py-3 bg-neutral-900 text-white font-bold rounded-xl mt-2 hover:bg-black transition active:scale-95 shadow-md">개설하기</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] bg-neutral-900/90 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-lg backdrop-blur flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <span id="toastIcon">✨</span>
+    <span id="toastMsg">메시지</span>
+  </div>
+
+  <canvas id="storyGenCanvas" width="1080" height="1920" class="hidden"></canvas>
+
+  <!-- ============================================================================ -->
+  <!-- SCRIPT -->
+  <!-- ============================================================================ -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, serverTimestamp, arrayUnion, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    window.myFirebaseConfig = {
+      apiKey: "AIzaSyCWk1nTkHGXcTWf5uhqoMnKDX2xWsCgZkM",
+      authDomain: "day-72267.firebaseapp.com",
+      projectId: "day-72267",
+      storageBucket: "day-72267.firebasestorage.app",
+      messagingSenderId: "577402756198",
+      appId: "1:577402756198:web:99fc89f3d75491987f21a7",
+      measurementId: "G-0731KZNB5L"
+    };
+
+    const CURRENT_VERSION = 'v0.1.6';
+    const SUPER_ADMIN_HANDLES = ['admin', 'manager'];
+
+    class ChallengeApp {
+      constructor() {
+        this.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        this.db = null;
+        this.auth = null;
+        this.currentUser = null; 
+        
+        this.myGlobalProfile = null;
+        this.activeRoomCode = null;
+        this.viewingUserId = null;
+        this.currentTab = 'grid';
+        this.isTimelineMode = false;
+        this.isLimitedToThree = false;
+        this.badgesExpanded = false;
+        
+        this.roomData = null; 
+        this.posts = [];      
+        this.cheers = []; 
+        this.notifications = [];
+        this.unsubs = [];     
+        
+        this.stampMode = 'photo';
+        this.canvasCtx = null;
+        this.isDrawing = false;
+        this.photoBase64 = null;
+        
+        this.createDays = 100;
+        this.currentViewingPost = null;
+
+        this.editingPostId = null;
+        this.originalEditImage = null;
+
+        this.cropTarget = 'post';
+        this.cropImg = null;
+        this.cropZoom = 100;
+        this.cropOffsetX = 0;
+        this.cropOffsetY = 0;
+        this.cropBaseScale = 1;
+        this.cropViewportSize = 0;
+
+        this.stickerCanvasCtx = null;
+        this.isStickerDrawing = false;
+        this.stickerPenColor = '#ef4444';
+
+        this.activeStickerDataUrl = null;
+        this.stickerPosX = 50;
+        this.stickerPosY = 50;
+        this.stickerRotation = 0;
+        this.isDraggingSticker = false;
+        this.isRotatingSticker = false;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+
+        this.tempSelectedSkin = 'skin-default';
+
+        this.textCardThemeIndex = 0;
+        this.textCardThemes = [
+          { colors: ['#FFFFFF'], textColor: '#171717', gradient: false },
+          { colors: ['#171717'], textColor: '#FAFAFA', gradient: false },
+          { colors: ['#262626', '#525252'], textColor: '#FFFFFF', gradient: true },
+          { colors: ['#F97316', '#EC4899'], textColor: '#FFFFFF', gradient: true }
+        ];
+      }
+
+      getSafeFirebaseConfig() {
+        if (window.myFirebaseConfig && window.myFirebaseConfig.apiKey && window.myFirebaseConfig.apiKey !== "YOUR_API_KEY") {
+          return window.myFirebaseConfig;
+        }
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+          return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
+        }
+        return null;
+      }
+
+      get isSuperAdmin() {
+        if (!this.myGlobalProfile) return false;
+        return SUPER_ADMIN_HANDLES.includes(this.myGlobalProfile.handle?.toLowerCase());
+      }
+
+      get myCurrentRoomProfile() {
+        if (!this.myGlobalProfile) return null;
+        if (this.roomData && this.roomData.members) {
+          const roomMember = this.roomData.members.find(m => m.id === this.myGlobalProfile.id);
+          if (roomMember) return roomMember;
+        }
+        return this.myGlobalProfile;
+      }
+
+      get viewingMember() {
+        if (!this.roomData || !this.roomData.members) return this.myCurrentRoomProfile;
+        return this.roomData.members.find(m => m.id === this.viewingUserId) || this.roomData.members[0] || this.myCurrentRoomProfile;
+      }
+
+      getLiveMember(userId) {
+        if (!userId || !this.roomData || !this.roomData.members) return null;
+        const member = this.roomData.members.find(m => m.id === userId);
+        if (!member) return null;
+
+        // 만약 방 문서에 base64 avatar가 비워져 있다면, 내 전역 프로필이나 Dicebear 기본값 사용
+        if (!member.avatar) {
+          if (member.id === this.myGlobalProfile?.id) {
+            return { ...member, avatar: this.myGlobalProfile.avatar };
+          }
+          return {
+            ...member,
+            avatar: `https://api.dicebear.com/7.x/notionists/svg?seed=${member.handle || member.id}&backgroundColor=f3f4f6`
+          };
+        }
+        return member;
+      }
+
+      get isRoomHost() {
+        if (!this.roomData || !this.myGlobalProfile) return false;
+        if (this.isSuperAdmin) return true;
+        if (this.roomData.hostId) {
+          return this.roomData.hostId === this.myGlobalProfile.id;
+        }
+        return (this.roomData.members && this.roomData.members[0]?.id === this.myGlobalProfile.id);
+      }
+
+      get hasAdminFeaturePrivilege() {
+        if (this.isSuperAdmin) return true;
+        if (this.activeRoomCode === 'CHAL-100' && this.isRoomHost) return true;
+        return false;
+      }
+
+      get myGlobalCompletedStamps() {
+        return this.myGlobalProfile?.totalCompletedStamps || 0;
+      }
+
+      formatUserDisplayName(member, fallbackName) {
+        if (!member) return fallbackName || '사용자';
+        const name = member.name || member.handle;
+        const handle = member.handle;
+        if (name && handle && name !== handle) {
+          return `${name} (@${handle})`;
+        }
+        return name || handle || fallbackName;
+      }
+
+      getTodayDateString() {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+
+      calculateStreak(userId) {
+        const userPosts = this.posts.filter(p => p.userId === userId);
+        if (userPosts.length === 0) return 0;
+        
+        const dates = [...new Set(userPosts.map(p => p.date))].sort().reverse();
+        const today = this.getTodayDateString();
+        
+        const yesterdayDate = new Date();
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+        const yYear = yesterdayDate.getFullYear();
+        const yMonth = String(yesterdayDate.getMonth() + 1).padStart(2, '0');
+        const yDay = String(yesterdayDate.getDate()).padStart(2, '0');
+        const yesterday = `${yYear}-${yMonth}-${yDay}`;
+
+        if (dates[0] !== today && dates[0] !== yesterday) return 0;
+
+        let streak = 0;
+        let checkDate = new Date(dates[0]);
+
+        for (let i = 0; i < dates.length; i++) {
+          const expectedYear = checkDate.getFullYear();
+          const expectedMonth = String(checkDate.getMonth() + 1).padStart(2, '0');
+          const expectedDay = String(checkDate.getDate()).padStart(2, '0');
+          const expected = `${expectedYear}-${expectedMonth}-${expectedDay}`;
+
+          if (dates[i] === expected) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+        return streak;
+      }
+
+      async init() {
+        if (window.lucide) lucide.createIcons();
+        this.setupCanvas();
+        this.setupStickerCanvas();
+        this.setupStickerInteractions();
+        this.setupCropperDrag();
+        this.setupStoryHorizontalScroll();
+        this.checkPatchNoticeBanner();
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(() => this.renderTextCard());
+        }
+
+        window.addEventListener('click', (e) => {
+          if (!document.getElementById('notiDropdownContainer')?.contains(e.target)) {
+            this.closeNotiDropdown();
+          }
+          if (!document.getElementById('navDropdownContainer')?.contains(e.target)) {
+            this.closeNavDropdown();
+          }
+        });
+
+        const configToUse = this.getSafeFirebaseConfig();
+        if (configToUse) {
+          try {
+            const app = initializeApp(configToUse);
+            this.db = getFirestore(app);
+            this.auth = getAuth(app);
+
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              await signInWithCustomToken(this.auth, __initial_auth_token);
+            }
+
+            onAuthStateChanged(this.auth, async (user) => {
+              if (user) {
+                this.currentUser = user;
+                await this.loadUserProfile(this.tempHandle);
+              } else {
+                this.currentUser = null;
+                document.getElementById('landingOverlay').classList.remove('opacity-0', 'pointer-events-none');
+                document.getElementById('loginStep1').classList.remove('hidden');
+                document.getElementById('loginStep2').classList.add('hidden');
+              }
+            });
+          } catch (e) {
+            console.error("Firebase 초기화 에러:", e);
+          }
+        } else {
+           document.getElementById('landingOverlay').classList.remove('opacity-0', 'pointer-events-none');
+           document.getElementById('loginStep1').classList.add('hidden');
+        }
+      }
+
+      setupStoryHorizontalScroll() {
+        const storyContainer = document.getElementById('storyBarContainer');
+        if (!storyContainer) return;
+
+        storyContainer.addEventListener('wheel', (e) => {
+          if (e.deltaY !== 0) {
+            e.preventDefault();
+            storyContainer.scrollLeft += e.deltaY;
+          }
+        }, { passive: false });
+      }
+
+      checkPatchNoticeBanner() {
+        const dismissedVer = localStorage.getItem('dismissed_patch_ver');
+        const banner = document.getElementById('patchNoticeBanner');
+        if (dismissedVer === CURRENT_VERSION) {
+          banner?.classList.add('hidden');
+        } else {
+          banner?.classList.remove('hidden');
+        }
+      }
+
+      dismissPatchNotice() {
+        localStorage.setItem('dismissed_patch_ver', CURRENT_VERSION);
+        document.getElementById('patchNoticeBanner')?.classList.add('hidden');
+      }
+
+      openUpdateNotesModal() {
+        this.openModal('modalUpdateNotes');
+      }
+
+      async handleLogin(e) {
+        if (e) e.preventDefault();
+        const configToUse = this.getSafeFirebaseConfig();
+        if (!configToUse) {
+            alert("⚠️ Firebase 설정을 확인해주세요!");
+            return;
+        }
+
+        const id = document.getElementById('loginId').value.trim();
+        const pw = document.getElementById('loginPw').value;
+
+        if (!id) { alert("아이디를 입력해주세요."); return; }
+        if (!pw || pw.length < 6) { alert("비밀번호는 6자리 이상이어야 합니다."); return; }
+        
+        const email = `${id.toLowerCase()}@100days.app`; 
+        const btn = document.getElementById('btnLogin');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> 로그인 중...`;
+        if (window.lucide) lucide.createIcons();
+
+        try {
+          if (!this.auth) throw new Error("Firebase Auth 초기화 안됨");
+          try {
+            await signInWithEmailAndPassword(this.auth, email, pw);
+          } catch(err) {
+            if(err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
+              try {
+                await createUserWithEmailAndPassword(this.auth, email, pw);
+              } catch(createErr) {
+                if (createErr.code === 'auth/email-already-in-use') {
+                    alert("비밀번호가 틀렸습니다.");
+                } else {
+                    alert("회원가입 실패: " + createErr.message);
+                }
+                throw createErr;
+              }
+            } else {
+              alert("로그인 실패: " + err.message);
+              throw err;
+            }
+          }
+          
+          this.tempHandle = id;
+          document.getElementById('loginId').value = '';
+          document.getElementById('loginPw').value = '';
+        } catch(err) {
+          console.error(err);
+        } finally {
+          btn.innerHTML = originalText;
+          if (window.lucide) lucide.createIcons();
+        }
+      }
+
+      async handleInitialRoomCode(e) {
+        if(e) e.preventDefault();
+        let code = document.getElementById('initialRoomCode').value.trim().toUpperCase();
+        let pw = document.getElementById('initialRoomPassword').value;
+        if (!code) {
+          alert('초대 코드를 입력해주세요!');
+          return;
+        }
+        await this.joinRoomAndSubscribe(code, pw);
+      }
+
+      skipToCreateOwnRoom() {
+        this.isOnboardingCreate = true;
+        document.getElementById('landingOverlay').classList.add('opacity-0', 'pointer-events-none');
+        this.openCreateRoomModal();
+      }
+
+      async logout() {
+        if(this.auth) {
+          await signOut(this.auth);
+          this.showToast("로그아웃 되었습니다.", "👋");
+        }
+      }
+
+      async loadUserProfile(defaultHandle) {
+        if (!this.currentUser || !this.db) return;
+        const uid = this.currentUser.uid;
+        const userRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'user_profiles', uid);
+        
+        try {
+          const snap = await getDoc(userRef);
+          let isNewUser = false;
+          
+          if (snap.exists()) {
+            this.myGlobalProfile = snap.data();
+            if (this.myGlobalProfile.totalCompletedStamps === undefined) {
+              this.myGlobalProfile.totalCompletedStamps = 0;
+              await updateDoc(userRef, { totalCompletedStamps: 0 });
+            }
+          } else {
+            isNewUser = true;
+            const handle = defaultHandle || `user${Math.floor(Math.random()*1000)}`;
+            const isSuper = SUPER_ADMIN_HANDLES.includes(handle.toLowerCase());
+            this.myGlobalProfile = {
+              id: uid,
+              handle: handle,
+              name: isSuper ? '관리자' : handle,
+              avatar: `https://api.dicebear.com/7.x/notionists/svg?seed=${handle}&backgroundColor=f3f4f6`,
+              bio: isSuper ? '100days 공식 관리자 계정입니다.' : '하루하루 파이팅!',
+              skin: 'skin-default',
+              totalCompletedStamps: 0,
+              lastRoom: null 
+            };
+            await setDoc(userRef, this.myGlobalProfile);
+          }
+
+          await this.syncMyCompletedStampsWithDB(false);
+
+          document.getElementById('loginStep1').classList.add('hidden');
+
+          if (isNewUser || !this.myGlobalProfile.lastRoom) {
+              document.getElementById('landingOverlay').classList.remove('opacity-0', 'pointer-events-none');
+              document.getElementById('loginStep2').classList.remove('hidden');
+          } else {
+              document.getElementById('landingOverlay').classList.add('opacity-0', 'pointer-events-none');
+              await this.joinRoomAndSubscribe(this.myGlobalProfile.lastRoom);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      async syncMyCompletedStampsWithDB(showToastAlert = false) {
+        if (!this.db || !this.myGlobalProfile) return;
+        try {
+          const postsQ = query(
+            collection(this.db, 'artifacts', this.appId, 'public', 'data', 'posts'),
+            where('userId', '==', this.myGlobalProfile.id)
+          );
+          const snap = await getDocs(postsQ);
+          const actualPostCount = snap.size;
+
+          if (actualPostCount > (this.myGlobalProfile.totalCompletedStamps || 0) || showToastAlert) {
+            const newCount = Math.max(actualPostCount, this.myGlobalProfile.totalCompletedStamps || 0);
+            this.myGlobalProfile.totalCompletedStamps = newCount;
+
+            const userRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'user_profiles', this.myGlobalProfile.id);
+            await updateDoc(userRef, { totalCompletedStamps: newCount });
+
+            if (this.roomData && this.roomData.members) {
+              const roomRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'rooms', this.activeRoomCode);
+              const members = this.roomData.members.map(m => {
+                if (m.id === this.myGlobalProfile.id) return { ...m, totalCompletedStamps: newCount };
+                return m;
+              });
+              await updateDoc(roomRef, { members });
+            }
+
+            this.renderBadges();
+            if (showToastAlert) {
+              this.showToast(`실제 작성 글(${actualPostCount}개) 기준으로 누적 수가 정상 복구되었습니다!`, '✨');
+            }
+          }
+        } catch (err) {
+          console.error('누적 수치 동기화 에러:', err);
+        }
+      }
+
+      async joinRoomAndSubscribe(roomCode, inputPassword = '') {
+        if (!this.db) return;
+        this.clearSubscriptions();
+        
+        const roomRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'rooms', roomCode);
+        
+        try {
+          const snap = await getDoc(roomRef);
+          if (!snap.exists()) {
+            if (roomCode === 'CHAL-100') {
+               const initialHostId = this.myGlobalProfile.id;
+               await setDoc(roomRef, {
+                 code: 'CHAL-100',
+                 title: '100일 챌린지 공식 안내 방',
+                 hostId: initialHostId,
+                 goalDays: 100,
+                 maxMembers: 1000,
+                 password: '',
+                 startDate: '2026-01-01',
+                 members: [{ 
+                   id: initialHostId, 
+                   name: this.myGlobalProfile.name || '공식 방장', 
+                   handle: this.myGlobalProfile.handle, 
+                   avatar: this.myGlobalProfile.avatar, 
+                   bio: 'CHAL-100 공식 방입니다. 나만의 방을 만들어보세요!',
+                   skin: 'skin-default',
+                   totalCompletedStamps: this.myGlobalCompletedStamps
+                 }],
+                 cheers: []
+               });
+               return this.joinRoomAndSubscribe(roomCode, inputPassword);
+            } else {
+               this.showToast("존재하지 않거나 삭제된 방입니다.", "❌");
+               document.getElementById('landingOverlay').classList.remove('opacity-0', 'pointer-events-none');
+               document.getElementById('loginStep2').classList.remove('hidden');
+               return;
+            }
+          }
+
+          const data = snap.data();
+          const isChal100 = (roomCode === 'CHAL-100');
+          const isAlreadyMember = data.members && data.members.some(m => m.id === this.myGlobalProfile.id);
+
+          if (data.cheers && Array.isArray(data.cheers) && data.cheers.length > 0) {
+  const cheersCol = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'cheers');
+  await Promise.all(data.cheers.map((c, i) => {
+    const legacyId = `legacy_${roomCode}_${c.id || i}`;
+    return setDoc(doc(cheersCol, legacyId), {
+      roomCode,
+      toUserId: String(c.toUserId || ''),
+      fromUserId: String(c.fromUserId || ''),
+      author: String(c.author || '익명'),
+      avatar: (c.avatar && c.avatar.startsWith('http')) ? c.avatar : '',
+      text: String(c.text || ''),
+      createdAt: c.time ? new Date(c.time).getTime() : (c.id || Date.now())
+    });
+  }));
+  await updateDoc(roomRef, { cheers: [] });
+}
+
+          if (!isAlreadyMember) {
+            if (isChal100) {
+              if (this.isSuperAdmin || data.hostId === this.myGlobalProfile.id) {
+                data.members = data.members || [];
+                data.members.unshift(this.myGlobalProfile);
+                await updateDoc(roomRef, { members: data.members, hostId: this.myGlobalProfile.id });
+              }
+            } else {
+              if (data.password && data.password.trim() !== '') {
+                if (inputPassword !== data.password && !this.isSuperAdmin) {
+                  alert('방 비밀번호가 틀렸습니다!');
+                  document.getElementById('landingOverlay').classList.remove('opacity-0', 'pointer-events-none');
+                  document.getElementById('loginStep2').classList.remove('hidden');
+                  return;
+                }
+              }
+
+              const maxMem = data.maxMembers || 100;
+              if (data.members.length >= maxMem && !this.isSuperAdmin) {
+                alert(`이 방은 최대 인원(${maxMem}명)이 꽉 차서 입장할 수 없습니다.`);
+                document.getElementById('landingOverlay').classList.remove('opacity-0', 'pointer-events-none');
+                document.getElementById('loginStep2').classList.remove('hidden');
+                return;
+              }
+
+              data.members.push(this.myGlobalProfile);
+              await updateDoc(roomRef, { members: data.members });
+            }
+          }
+
+          this.activeRoomCode = roomCode;
+          this.viewingUserId = this.myGlobalProfile.id;
+          this.isTimelineMode = false;
+          this.isLimitedToThree = false;
+          
+          document.getElementById('landingOverlay').classList.add('opacity-0', 'pointer-events-none');
+
+          if (!isChal100 && this.myGlobalProfile.lastRoom !== roomCode) {
+             this.myGlobalProfile.lastRoom = roomCode;
+             await updateDoc(doc(this.db, 'artifacts', this.appId, 'public', 'data', 'user_profiles', this.myGlobalProfile.id), { lastRoom: roomCode });
+          }
+
+          const unsubRoom = onSnapshot(roomRef, async (docSnap) => {
+            if (docSnap.exists()) {
+              this.roomData = docSnap.data();
+              if (!isChal100 && this.roomData.members && !this.roomData.members.some(m => m.id === this.viewingUserId)) {
+                this.viewingUserId = this.myGlobalProfile.id;
+                alert('방장에 의해 강퇴되었습니다.');
+              }
+              this.renderAll();
+            } else {
+              alert('방장이 이 방을 삭제했습니다.');
+              this.openRoomSwitchModal();
+            }
+          }, (err) => console.error(err));
+          this.unsubs.push(unsubRoom);
+
+          const postsQuery = query(
+            collection(this.db, 'artifacts', this.appId, 'public', 'data', 'posts'),
+            where('roomCode', '==', roomCode)
+          );
+          const unsubPosts = onSnapshot(postsQuery, (snapshot) => {
+            this.posts = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            this.renderAll();
+            
+            if (this.currentViewingPost && !document.getElementById('modalPostDetail').classList.contains('hidden')) {
+               const updated = this.posts.find(p => p.id === this.currentViewingPost.id);
+               if (updated) {
+                 this.currentViewingPost = updated;
+                 this.updateDetailModalUI();
+               }
+            }
+          }, (err) => console.error(err));
+          this.unsubs.push(unsubPosts);
+
+          // 💌 독립된 방명록 컬렉션 실시간 구독
+          const cheersQuery = query(
+            collection(this.db, 'artifacts', this.appId, 'public', 'data', 'cheers'),
+            where('roomCode', '==', roomCode)
+          );
+          const unsubCheers = onSnapshot(cheersQuery, (snapshot) => {
+            this.cheers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            this.renderCheerList();
+            this.renderProfile();
+          }, (err) => console.error("Cheers snapshot error:", err));
+          this.unsubs.push(unsubCheers);
+
+          // 🔔 알림 실시간 구독
+          const notiQuery = query(
+            collection(this.db, 'artifacts', this.appId, 'public', 'data', 'notifications'),
+            where('toUserId', '==', this.myGlobalProfile.id)
+          );
+          const unsubNoti = onSnapshot(notiQuery, (snapshot) => {
+            this.notifications = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            this.renderNotifications();
+          }, (err) => console.error("Noti snapshot err:", err));
+          this.unsubs.push(unsubNoti);
+
+          this.showToast(`[${roomCode}] 방에 입장했습니다!`, "🚀");
+        } catch (e) {
+          console.error("Room Join Error", e);
+        }
+      }
+
+      async superAdminResetChal100() {
+        if (!this.isRoomHost) {
+          alert("방장 권한이 필요합니다.");
+          return;
+        }
+        const ok = confirm("⚠️ [방장 관리 기능]\nCHAL-100 방에 등록된 기존 게시글과 방명록만 깨끗하게 정리하시겠습니까?\n(유저들의 개인 누적 인증 기록은 안전하게 유지됩니다)");
+        if (!ok) return;
+
+        try {
+          const postsQuery = query(collection(this.db, 'artifacts', this.appId, 'public', 'data', 'posts'), where('roomCode', '==', 'CHAL-100'));
+          const snap = await getDocs(postsQuery);
+          const delPromises = snap.docs.map(d => deleteDoc(d.ref));
+          await Promise.all(delPromises);
+
+          const cheersQuery = query(collection(this.db, 'artifacts', this.appId, 'public', 'data', 'cheers'), where('roomCode', '==', 'CHAL-100'));
+          const cSnap = await getDocs(cheersQuery);
+          await Promise.all(cSnap.docs.map(d => deleteDoc(d.ref)));
+
+          const roomRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'rooms', 'CHAL-100');
+          await updateDoc(roomRef, {
+            title: '100일 챌린지 공식 안내 방',
+            hostId: this.myGlobalProfile.id,
+            cheers: []
+          });
+
+          this.showToast("CHAL-100 방의 게시글이 깨끗이 정리되었습니다.", "🧹");
+          this.renderAll();
+        } catch (err) {
+          console.error(err);
+          alert("정리 실패: " + err.message);
+        }
+      }
+
+      clearSubscriptions() {
+        this.unsubs.forEach(fn => fn());
+        this.unsubs = [];
+      }
+
+      renderAll() {
+        if (!this.roomData) return;
+        this.renderMemberTabs();
+        this.renderProfile();
+        this.renderBadges();
+        this.renderGrid();
+        this.renderStampboard();
+        this.renderTimeline();
+        this.renderCheerList();
+        this.renderNotifications();
+        if (window.lucide) lucide.createIcons();
+      }
+
+      toggleNotiDropdown(e) {
+        if (e) e.stopPropagation();
+        this.closeNavDropdown();
+        const menu = document.getElementById('notiDropdownMenu');
+        menu.classList.toggle('hidden');
+      }
+
+      closeNotiDropdown() {
+        document.getElementById('notiDropdownMenu')?.classList.add('hidden');
+      }
+
+      renderNotifications() {
+        const badge = document.getElementById('notiBadge');
+        const list = document.getElementById('notiList');
+        if (!badge || !list) return;
+
+        const unreadCount = this.notifications.filter(n => !n.read).length;
+        if (unreadCount > 0) {
+          badge.innerText = unreadCount > 9 ? '9+' : unreadCount;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+
+        const sorted = [...this.notifications]
+          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+          .slice(0, 30);
+
+        if (sorted.length === 0) {
+          list.innerHTML = `
+            <div class="py-10 text-center text-xs text-neutral-400">
+              새로운 알림이 없습니다.
+            </div>
+          `;
+          return;
+        }
+
+        list.innerHTML = sorted.map(noti => {
+          const isComment = noti.type === 'comment';
+          const actionDesc = isComment 
+            ? `내 #${noti.postDay}일차 글에 댓글을 달았습니다: "${noti.textPreview || ''}"`
+            : `내 #${noti.postDay}일차 글에 스티커를 부착했습니다.`;
+
+          return `
+            <div class="p-3 flex items-start gap-3 hover:bg-neutral-50 transition relative group ${noti.read ? 'opacity-50' : 'bg-neutral-50/40'}">
+              <div onclick="window.app?.handleClickNotification('${noti.id}', '${noti.postId}')" class="flex items-start gap-3 flex-1 min-w-0 cursor-pointer">
+                <img src="${noti.fromUserAvatar}" class="w-8 h-8 rounded-full border border-neutral-200 object-cover shrink-0 aspect-square">
+                <div class="flex-1 min-w-0 pr-2">
+                  <p class="text-xs text-neutral-800 leading-snug break-words">
+                    <strong class="font-bold text-neutral-900">${noti.fromUserName}</strong>님이 ${actionDesc}
+                  </p>
+                  <span class="text-[10px] text-neutral-400 font-mono mt-1 block">
+                    ${isComment ? '💬 댓글' : '🎨 스티커'}
+                  </span>
+                </div>
+              </div>
+              <button onclick="window.app?.deleteSingleNotification(event, '${noti.id}')" class="text-neutral-300 hover:text-rose-500 p-1 transition shrink-0" title="알림 삭제">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          `;
+        }).join('');
+        if (window.lucide) lucide.createIcons();
+      }
+
+      async handleClickNotification(notiId, postId) {
+        this.closeNotiDropdown();
+        
+        if (this.db) {
+          const notiRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'notifications', notiId);
+          updateDoc(notiRef, { read: true }).catch(err => console.error(err));
+        }
+
+        const targetPost = this.posts.find(p => p.id === postId);
+        if (targetPost) {
+          this.openPostDetailModal(targetPost);
+        } else {
+          this.showToast("게시글을 찾을 수 없습니다.", "🔍");
+        }
+      }
+
+      async deleteSingleNotification(e, notiId) {
+        if (e) e.stopPropagation();
+        if (!this.db || !notiId) return;
+
+        try {
+          const notiRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'notifications', notiId);
+          await deleteDoc(notiRef);
+        } catch (err) {
+          console.error("알림 삭제 실패:", err);
+        }
+      }
+
+      async deleteAllNotifications() {
+        if (!this.db || this.notifications.length === 0) return;
+        const ok = confirm("모든 알림을 삭제하시겠습니까?");
+        if (!ok) return;
+
+        try {
+          const delPromises = this.notifications.map(n => 
+            deleteDoc(doc(this.db, 'artifacts', this.appId, 'public', 'data', 'notifications', n.id))
+          );
+          await Promise.all(delPromises);
+          this.showToast("알림함이 모두 비워졌습니다.", "🧹");
+        } catch (err) {
+          console.error("알림 전체 삭제 실패:", err);
+        }
+      }
+
+      async clearAllNotifications() {
+        if (!this.db) return;
+        const unreadNotis = this.notifications.filter(n => !n.read);
+        for (const n of unreadNotis) {
+          const notiRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'notifications', n.id);
+          updateDoc(notiRef, { read: true }).catch(err => console.error(err));
+        }
+        this.showToast("모든 알림을 읽음 처리했습니다.", "✓");
+      }
+
+      renderMemberTabs() {
+        const container = document.getElementById('memberTabs');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const allRing = document.getElementById('allTimelineRing');
+        const allText = document.getElementById('allTimelineText');
+        if (this.isTimelineMode) {
+          allRing.className = 'story-ring-active scale-105 transition-all duration-300';
+          allText.className = 'text-[11px] text-neutral-900 font-extrabold truncate w-full text-center px-1 transition-colors';
+        } else {
+          allRing.className = 'story-ring-empty transition-all duration-300';
+          allText.className = 'text-[11px] text-neutral-500 font-medium group-hover:text-neutral-900 truncate w-full text-center px-1 transition-colors';
+        }
+
+        const membersToRender = (this.roomData.members && this.roomData.members.length > 0) ? this.roomData.members : [this.myCurrentRoomProfile];
+        const todayStr = this.getTodayDateString();
+
+        membersToRender.forEach(member => {
+          const isActive = !this.isTimelineMode && member.id === this.viewingUserId;
+          const isMe = member.id === this.myGlobalProfile.id;
+          const isHost = this.roomData.hostId ? (member.id === this.roomData.hostId) : (membersToRender[0]?.id === member.id);
+          
+          const userPosts = this.posts.filter(p => p.userId === member.id);
+          const hasTodayPost = userPosts.some(p => p.date === todayStr);
+
+          const ringClass = isActive 
+            ? 'story-ring-active scale-105' 
+            : (hasTodayPost ? 'story-ring' : 'story-ring-empty');
+          
+          const el = document.createElement('div');
+          el.className = 'flex flex-col items-center gap-1 min-w-[68px] cursor-pointer group shrink-0';
+          el.onclick = () => {
+            if (this.isTimelineMode) {
+              this.selectMember(member.id);
+            } else {
+              this.isTimelineMode = false;
+              this.isLimitedToThree = false;
+              this.viewingUserId = member.id;
+              this.switchTab('grid');
+              this.renderAll();
+            }
+          };
+
+          const tabDisplayName = member.name || member.handle || '사용자';
+
+          el.innerHTML = `
+            <div class="${ringClass} transition-all duration-300 relative">
+              <div class="w-14 h-14 rounded-full border-[2.5px] border-white overflow-hidden bg-white aspect-square shrink-0">
+                <img src="${member.avatar}" loading="lazy" decoding="async" class="w-full h-full object-cover rounded-full aspect-square block">
+              </div>
+              ${isHost ? '<span class="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[9px] px-1 rounded font-bold shadow">방장</span>' : ''}
+            </div>
+            <span class="text-[11px] ${isActive ? 'text-neutral-900 font-extrabold' : 'text-neutral-500 font-medium group-hover:text-neutral-700'} truncate w-full text-center px-1 transition-colors mt-0.5">
+              ${tabDisplayName}${isMe ? '(나)' : ''}
+            </span>
+          `;
+          container.appendChild(el);
+        });
+      }
+
+      renderProfile() {
+        const headerArea = document.getElementById('profileHeaderArea');
+        if (!headerArea) return;
+
+        if (this.isTimelineMode) {
+          headerArea.classList.add('hidden');
+          return;
+        } else {
+          headerArea.classList.remove('hidden');
+        }
+
+        const myProfile = this.myCurrentRoomProfile;
+        const m = this.viewingMember || myProfile;
+        if(!m) return;
+        const isMe = m.id === this.myGlobalProfile.id;
+        
+        document.getElementById('navAvatar').src = myProfile.avatar;
+        document.getElementById('profileAvatar').src = m.avatar;
+        document.getElementById('profileUsername').innerText = m.name || m.handle || '이름';
+        document.getElementById('profileName').innerText = m.handle ? `@${m.handle}` : '';
+        document.getElementById('profileBio').innerText = m.bio || '';
+        document.getElementById('profileCodeBadge').innerText = `ROOM: ${this.roomData.code}`;
+
+        const activeSkin = m.skin || 'skin-default';
+        headerArea.className = `px-4 py-6 transition-all duration-500 ${activeSkin}`;
+
+        const chal100Banner = document.getElementById('chal100NoticeBanner');
+        if (this.roomData.code === 'CHAL-100') {
+          chal100Banner?.classList.remove('hidden');
+        } else {
+          chal100Banner?.classList.add('hidden');
+        }
+
+        const hostBadge = document.getElementById('profileHostSettingsBadge');
+        const navHostBtn = document.getElementById('navHostSettingsBtn');
+        const navHostDiv = document.getElementById('navHostSettingsDivider');
+        const superResetBtn = document.getElementById('superAdminResetBtn');
+        const superResetDiv = document.getElementById('superAdminResetDivider');
+        const showHostMenu = this.isRoomHost;
+
+        if (showHostMenu) {
+          hostBadge?.classList.remove('hidden');
+          hostBadge?.classList.add('flex');
+          navHostBtn?.classList.remove('hidden');
+          navHostBtn?.classList.add('flex');
+          navHostDiv?.classList.remove('hidden');
+        } else {
+          hostBadge?.classList.add('hidden');
+          hostBadge?.classList.remove('flex');
+          navHostBtn?.classList.add('hidden');
+          navHostBtn?.classList.remove('flex');
+          navHostDiv?.classList.add('hidden');
+        }
+
+        if (this.isRoomHost && this.roomData.code === 'CHAL-100') {
+          superResetBtn?.classList.remove('hidden');
+          superResetBtn?.classList.add('flex');
+          superResetDiv?.classList.remove('hidden');
+        } else {
+          superResetBtn?.classList.add('hidden');
+          superResetBtn?.classList.remove('flex');
+          superResetDiv?.classList.add('hidden');
+        }
+        
+        const startDate = new Date(this.roomData.startDate || '2026-01-01');
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + (this.roomData.goalDays || 100) - 1);
+        
+        const formatDt = (d) => `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+        document.getElementById('profilePeriod').innerText = `${formatDt(startDate)} ~ ${formatDt(endDate)}`;
+        
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        endDate.setHours(0,0,0,0);
+        const diffMs = endDate - today;
+        const diffDays = Math.ceil(diffMs / (1000*60*60*24));
+        const badge = document.getElementById('profileDdayBadge');
+        if (diffDays > 0) badge.innerText = `D-${diffDays}`;
+        else if (diffDays === 0) badge.innerText = `D-DAY`;
+        else badge.innerText = `완료`;
+
+        const streak = this.calculateStreak(m.id);
+        const streakBadge = document.getElementById('profileStreakBadge');
+        streakBadge.innerText = `🔥 ${streak}일 연속`;
+
+        const userPosts = this.posts.filter(p => p.userId === m.id);
+        const completed = userPosts.length;
+        const goal = this.roomData.goalDays || 100;
+        const percent = Math.min(100, Math.round((completed / goal) * 100));
+        
+        document.getElementById('statCompleted').innerText = completed;
+        document.getElementById('statGoal').innerText = goal;
+        document.getElementById('statPercent').innerText = `${percent}%`;
+
+        document.getElementById('profileActionButtons').style.display = isMe ? 'flex' : 'none';
+        
+        // renderProfile() 맨 하단 부분
+const legacyCheers = (this.roomData?.cheers || []).filter(c => {
+  if (!c.toUserId || c.toUserId === 'undefined') return true;
+  return c.toUserId === m.id || c.toUserId === m.handle || c.toUserId === m.name;
+});
+
+const newCheers = (this.cheers || []).filter(c => {
+  if (!c.toUserId || c.toUserId === 'undefined') return true;
+  return c.toUserId === m.id || c.toUserId === m.handle || c.toUserId === m.name;
+});
+
+document.getElementById('cheerCount').innerText = legacyCheers.length + newCheers.length;
+      }
+
+      handleAvatarClick(e) {
+        if (e) e.stopPropagation();
+        const m = this.viewingMember;
+        if (!m) return;
+        document.getElementById('zoomAvatarImg').src = m.avatar;
+        document.getElementById('zoomAvatarName').innerText = m.name || m.handle;
+        document.getElementById('modalAvatarZoom').classList.remove('hidden');
+      }
+
+      closeAvatarZoom() {
+        document.getElementById('modalAvatarZoom').classList.add('hidden');
+      }
+
+      toggleBadgeList() {
+        this.badgesExpanded = !this.badgesExpanded;
+        const container = document.getElementById('badgeContainer');
+        const icon = document.getElementById('badgeToggleIcon');
+        if (this.badgesExpanded) {
+          container.classList.remove('hidden');
+          container.classList.add('flex');
+          if (icon) icon.classList.add('rotate-180');
+        } else {
+          container.classList.add('hidden');
+          container.classList.remove('flex');
+          if (icon) icon.classList.remove('rotate-180');
+        }
+      }
+
+      renderBadges() {
+        const container = document.getElementById('badgeContainer');
+        if (!container) return;
+
+        const m = this.viewingMember;
+        const isMe = (m?.id === this.myGlobalProfile?.id);
+        
+        const total = isMe 
+          ? this.myGlobalCompletedStamps 
+          : (m?.totalCompletedStamps !== undefined ? m.totalCompletedStamps : 0);
+
+        document.getElementById('globalCompletedCountLabel').innerText = total;
+        const isFreePass = isMe && this.hasAdminFeaturePrivilege;
+
+        const badges = [
+          { name: '🌱 시작의 발걸음', desc: '누적 1회 달성 (전역)', unlocked: isFreePass || total >= 1, reward: '튜토리얼 완료' },
+          { name: '🐣 작심삼일 극복', desc: '누적 3회 달성', unlocked: isFreePass || total >= 3, reward: '기본 챌린저 달성' },
+          { name: '🎨 스티커 아티스트', desc: '누적 5회 달성', unlocked: isFreePass || total >= 5, reward: '✨ 직접 그린 스티커 붙이기 해금' },
+          { name: '👗 스킨 드레서', desc: '누적 10회 달성', unlocked: isFreePass || total >= 10, reward: '✨ 프로필 배경 스킨 4종 해금' },
+          { name: '🏃 습관 완성자', desc: '누적 21회 달성', unlocked: isFreePass || total >= 21, reward: '습관 형성 뱃지' },
+          { name: '👑 100일의 전설', desc: '누적 100회 달성', unlocked: isFreePass || total >= 100, reward: '명예의 전당 등극' }
+        ];
+
+        container.innerHTML = badges.map(b => `
+          <div class="px-2.5 py-1.5 rounded-xl text-[11px] font-medium flex items-center justify-between gap-2 border transition ${b.unlocked ? 'bg-neutral-900 border-neutral-900 text-white shadow-sm' : 'bg-neutral-50 border-neutral-200 text-neutral-400 opacity-60'}" title="${b.desc} - ${b.reward}">
+            <span>${b.name}</span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded ${b.unlocked ? 'bg-white/20 text-white' : 'bg-neutral-200 text-neutral-500'} font-bold">${b.unlocked ? (isFreePass ? '관리자 프리패스' : '해금 완료') : b.desc.split(' ')[1]}</span>
+          </div>
+        `).join('');
+      }
+
+      renderGrid() {
+        const grid = document.getElementById('sectionGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        
+        const m = this.viewingMember;
+        if(!m) return;
+        
+        let userPosts = this.posts.filter(p => p.userId === m.id).sort((a,b) => b.day - a.day);
+        
+        if (this.isLimitedToThree) {
+          userPosts = userPosts.slice(0, 3);
+        }
+        
+        if (userPosts.length === 0) {
+          grid.innerHTML = `
+            <div class="col-span-3 py-20 flex flex-col items-center justify-center text-neutral-400">
+              <i data-lucide="camera" class="w-10 h-10 mb-2 stroke-1 text-neutral-300"></i>
+              <p class="text-xs font-medium">아직 게시물이 없습니다</p>
+            </div>
+          `;
+          return;
+        }
+
+        userPosts.forEach(post => {
+          const div = document.createElement('div');
+          div.className = 'aspect-square bg-neutral-100 relative group overflow-hidden border border-neutral-100 cursor-pointer';
+          div.onclick = () => this.openPostDetailModal(post);
+          
+          div.innerHTML = `
+            <img src="${post.data}" loading="lazy" decoding="async" class="w-full h-full object-cover select-none">
+            <div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white px-2 py-0.5 rounded shadow-sm flex items-center gap-1 font-bold text-[10px]">
+              <span>#${post.day}일차</span>
+            </div>
+            ${(post.stickers && post.stickers.length > 0) ? `<div class="absolute bottom-2 left-2 bg-white/90 text-[10px] font-bold px-1.5 py-0.5 rounded shadow">🎨 ${post.stickers.length}</div>` : ''}
+            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-4 text-white text-sm font-bold transition-opacity">
+              <span class="flex items-center gap-1"><i data-lucide="heart" class="w-4 h-4 fill-white"></i> ${(post.likedBy||[]).length}</span>
+              <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-4 h-4 fill-white"></i> ${(post.comments||[]).length}</span>
+            </div>
+          `;
+          grid.appendChild(div);
+        });
+      }
+
+      renderStampboard() {
+        const grid = document.getElementById('stampGrid');
+        if (!grid || !this.roomData) return;
+        grid.innerHTML = '';
+
+        const m = this.viewingMember;
+        const goal = this.roomData.goalDays || 100;
+        const userPosts = this.posts.filter(p => p.userId === m.id);
+        const postMap = new Map();
+        userPosts.forEach(p => postMap.set(p.day, p));
+
+        document.getElementById('stampboardTitle').innerText = `${m.name || m.handle}님의 스탬프판`;
+        document.getElementById('stampboardRate').innerText = `${userPosts.length} / ${goal}일`;
+
+        for (let i = 1; i <= goal; i++) {
+          const post = postMap.get(i);
+          const cell = document.createElement('div');
+          
+          if (post) {
+            cell.className = 'aspect-square rounded-xl bg-neutral-900 text-white font-bold flex flex-col items-center justify-center cursor-pointer shadow-sm hover:scale-105 active:scale-95 transition';
+            cell.title = `Day ${i}: ${post.date} 인증`;
+            cell.onclick = () => this.openPostDetailModal(post);
+            cell.innerHTML = `
+              <span class="text-xs font-mono font-black leading-none">✓</span>
+              <span class="text-[9px] opacity-70 font-mono mt-0.5">${i}</span>
+            `;
+          } else {
+            cell.className = 'aspect-square rounded-xl bg-white border border-neutral-200 text-neutral-300 font-medium flex flex-col items-center justify-center text-[10px] sm:text-xs select-none';
+            cell.innerHTML = `<span class="font-mono">${i}</span>`;
+          }
+          grid.appendChild(cell);
+        }
+      }
+
+      renderTimeline() {
+        const container = document.getElementById('timelineContainer');
+        if (!container || !this.roomData) return;
+        container.innerHTML = '';
+
+        const allPosts = [...this.posts].sort((a, b) => {
+          const timeA = a.timestamp?.seconds || (a.date ? new Date(a.date).getTime() / 1000 : 0);
+          const timeB = b.timestamp?.seconds || (b.date ? new Date(b.date).getTime() / 1000 : 0);
+          return timeB - timeA;
+        });
+
+        if (allPosts.length === 0) {
+          container.innerHTML = `
+            <div class="py-20 text-center text-neutral-400">
+              <p class="text-xs font-medium">아직 등록된 인증 피드가 없습니다.</p>
+            </div>
+          `;
+          return;
+        }
+
+        allPosts.forEach(post => {
+          const member = this.getLiveMember(post.userId);
+          const authorName = member ? (member.name || member.handle) : '사용자';
+          const authorHandle = member?.handle ? `@${member.handle}` : '';
+          const authorAvatar = member ? member.avatar : 'https://api.dicebear.com/7.x/notionists/svg?seed=Bear';
+
+          const card = document.createElement('div');
+          card.className = 'bg-white border-b border-neutral-100 pb-4 mb-2';
+          card.innerHTML = `
+            <div class="flex items-center justify-between px-4 py-3">
+              <div class="flex items-center gap-2.5 cursor-pointer" onclick="window.app?.selectMember('${post.userId}')">
+                <img src="${authorAvatar}" loading="lazy" decoding="async" class="w-8 h-8 rounded-full border border-neutral-200 object-cover aspect-square">
+                <div>
+                  <div class="text-sm font-bold text-neutral-900 leading-tight">${authorName} <span class="text-xs font-normal text-neutral-400">${authorHandle}</span></div>
+                  <div class="text-[10px] text-neutral-400 font-mono">${post.day}일차 • ${post.date}</div>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 text-[10px] font-mono font-bold">Day ${post.day}</span>
+            </div>
+            
+            <div class="aspect-square bg-neutral-100 overflow-hidden cursor-pointer relative" onclick="window.app?.openPostDetailModalById('${post.id}')">
+              <img src="${post.data}" loading="lazy" decoding="async" class="w-full h-full object-cover">
+              ${(post.stickers || []).map(st => `
+                <img src="${st.data}" class="absolute w-24 h-24 pointer-events-none sticker-art" style="left:${st.x}%; top:${st.y}%; transform:translate(-50%, -50%) rotate(${st.rotate || 0}deg);">
+              `).join('')}
+            </div>
+
+            <div class="px-4 pt-3">
+              <p class="text-sm text-neutral-800">
+                <span class="font-bold mr-1.5">${authorName}</span>
+                <span class="text-neutral-700 whitespace-pre-wrap">${post.caption || ''}</span>
+              </p>
+              <div class="flex items-center gap-3 text-xs text-neutral-400 mt-2 font-medium">
+                <span>좋아요 ${(post.likedBy||[]).length}개</span>
+                <span>댓글 ${(post.comments||[]).length}개</span>
+                ${(post.stickers && post.stickers.length > 0) ? `<span>스티커 ${post.stickers.length}개</span>` : ''}
+              </div>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      showTimelineView() {
+        this.isTimelineMode = true;
+        this.isLimitedToThree = false;
+        
+        document.getElementById('profileHeaderArea')?.classList.add('hidden');
+        document.getElementById('mainTabNav')?.classList.add('hidden');
+
+        document.getElementById('sectionGrid')?.classList.add('hidden');
+        document.getElementById('sectionStampboard')?.classList.add('hidden');
+        document.getElementById('sectionCheer')?.classList.add('hidden');
+        document.getElementById('sectionTimeline')?.classList.remove('hidden');
+
+        this.renderAll();
+      }
+
+      showHomeView() {
+        this.isTimelineMode = false;
+        this.isLimitedToThree = false;
+        if(this.myGlobalProfile) this.viewingUserId = this.myGlobalProfile.id;
+        
+        document.getElementById('profileHeaderArea')?.classList.remove('hidden');
+        document.getElementById('mainTabNav')?.classList.remove('hidden');
+        document.getElementById('sectionTimeline')?.classList.add('hidden');
+
+        this.switchTab('grid');
+        this.renderAll();
+      }
+
+      selectMember(userId) {
+        this.isTimelineMode = false;
+        this.isLimitedToThree = true;
+        this.viewingUserId = userId;
+        
+        document.getElementById('profileHeaderArea')?.classList.remove('hidden');
+        document.getElementById('mainTabNav')?.classList.remove('hidden');
+        document.getElementById('sectionTimeline')?.classList.add('hidden');
+        
+        this.switchTab('grid');
+        this.renderAll();
+      }
+
+      openPostDetailModalById(postId) {
+        const post = this.posts.find(p => p.id === postId);
+        if (post) this.openPostDetailModal(post);
+      }
+
+      switchTab(tab) {
+        this.currentTab = tab;
+        const tabs = {
+          grid: document.getElementById('tabGrid'),
+          stampboard: document.getElementById('tabStampboard'),
+          cheer: document.getElementById('tabCheer')
+        };
+        const sections = {
+          grid: document.getElementById('sectionGrid'),
+          stampboard: document.getElementById('sectionStampboard'),
+          cheer: document.getElementById('sectionCheer')
+        };
+
+        const actCls = ['border-neutral-900', 'text-neutral-900'];
+        const inactCls = ['border-transparent', 'text-neutral-400'];
+
+        Object.keys(tabs).forEach(k => {
+          if (!tabs[k] || !sections[k]) return;
+          if (k === tab) {
+            tabs[k].classList.add(...actCls); tabs[k].classList.remove(...inactCls);
+            sections[k].classList.remove('hidden');
+          } else {
+            tabs[k].classList.add(...inactCls); tabs[k].classList.remove(...actCls);
+            sections[k].classList.add('hidden');
+          }
+        });
+
+        if (tab === 'cheer') {
+          const target = this.viewingMember || this.myCurrentRoomProfile;
+          document.getElementById('cheerTargetName').innerText = target.name || target.handle;
+        }
+      }
+
+      openPostDetailModal(post) {
+        this.currentViewingPost = post;
+        const m = this.getLiveMember(post.userId) || this.viewingMember || this.myCurrentRoomProfile;
+        
+        document.getElementById('detailAvatar').src = m.avatar;
+        document.getElementById('detailUsername').innerText = this.formatUserDisplayName(m, m.handle);
+        document.getElementById('detailDate').innerText = `${post.day}일차 • ${post.date}`;
+        document.getElementById('detailImage').src = post.data;
+        document.getElementById('detailDayBadge').innerText = `#${post.day}일차`;
+        
+        document.getElementById('detailCaptionAuthor').innerText = m.name || m.handle;
+        document.getElementById('detailCaptionText').innerText = post.caption || '';
+
+        this.renderPostStickers(post);
+        document.getElementById('stickerAdjustContainer').classList.add('hidden');
+
+        const btnSticker = document.getElementById('btnOpenStickerDrawer');
+        if (this.myGlobalCompletedStamps >= 5 || this.hasAdminFeaturePrivilege) {
+          btnSticker.classList.remove('opacity-50');
+          btnSticker.title = '이 사진에 내가 그린 스티커 붙이기';
+        } else {
+          btnSticker.classList.add('opacity-50');
+          btnSticker.title = '누적 5회 이상 인증 시 해금됩니다!';
+        }
+
+        const ownerActions = document.getElementById('detailOwnerActions');
+        const canManage = (post.userId === this.myGlobalProfile.id) || this.isSuperAdmin;
+        ownerActions.classList.toggle('hidden', !canManage);
+        ownerActions.classList.toggle('flex', canManage);
+        
+        this.updateDetailModalUI();
+        this.openModal('modalPostDetail');
+      }
+
+      renderPostStickers(post) {
+        const stickerLayer = document.getElementById('detailStickerLayer');
+        stickerLayer.innerHTML = (post.stickers || []).map(st => `
+          <img src="${st.data}" class="absolute w-28 h-28 sticker-art select-none pointer-events-none" style="left:${st.x}%; top:${st.y}%; transform:translate(-50%, -50%) rotate(${st.rotate || 0}deg);">
+        `).join('');
+      }
+
+      setupStickerCanvas() {
+        const canvas = document.getElementById('stickerDrawCanvas');
+        if (!canvas) return;
+        this.stickerCanvasCtx = canvas.getContext('2d');
+        this.clearStickerCanvas();
+
+        const getPos = (e) => {
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = canvas.width / rect.width;
+          const scaleY = canvas.height / rect.height;
+          let clientX = e.clientX; let clientY = e.clientY;
+          if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+          return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+        };
+
+        const start = (e) => {
+          this.isStickerDrawing = true;
+          const p = getPos(e);
+          this.stickerCanvasCtx.beginPath();
+          this.stickerCanvasCtx.moveTo(p.x, p.y);
+        };
+        const move = (e) => {
+          if (!this.isStickerDrawing) return;
+          const p = getPos(e);
+          this.stickerCanvasCtx.lineWidth = 10;
+          this.stickerCanvasCtx.lineCap = 'round';
+          this.stickerCanvasCtx.lineJoin = 'round';
+          this.stickerCanvasCtx.strokeStyle = this.stickerPenColor;
+          this.stickerCanvasCtx.lineTo(p.x, p.y);
+          this.stickerCanvasCtx.stroke();
+        };
+        const end = () => { this.isStickerDrawing = false; };
+
+        canvas.addEventListener('mousedown', start);
+        canvas.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', end);
+
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); }, { passive: false });
+        canvas.addEventListener('touchend', end);
+      }
+
+      setStickerPenColor(color) {
+        this.stickerPenColor = color;
+        document.querySelectorAll('#stickerPalette button').forEach(btn => {
+          const isSelected = btn.dataset.stickerColor === color;
+          if (isSelected) {
+            btn.classList.add('ring-2', 'ring-neutral-900', 'ring-offset-2', 'scale-110');
+          } else {
+            btn.classList.remove('ring-2', 'ring-neutral-900', 'ring-offset-2', 'scale-110');
+          }
+        });
+      }
+
+      clearStickerCanvas() {
+        const canvas = document.getElementById('stickerDrawCanvas');
+        if (!canvas || !this.stickerCanvasCtx) return;
+        this.stickerCanvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      openStickerDrawer() {
+        if (this.myGlobalCompletedStamps < 5 && !this.hasAdminFeaturePrivilege) {
+          alert('🔒 누적 5회 이상 인증을 완료해야 스티커 붙이기 기능이 열립니다! (현재: ' + this.myGlobalCompletedStamps + '회)');
+          return;
+        }
+        this.clearStickerCanvas();
+        this.setStickerPenColor('#ef4444');
+        this.openModal('modalStickerDraw');
+      }
+
+      startStickerPlacement() {
+        const canvas = document.getElementById('stickerDrawCanvas');
+        this.activeStickerDataUrl = canvas.toDataURL('image/png');
+
+        this.closeModal('modalStickerDraw');
+
+        this.stickerPosX = 50;
+        this.stickerPosY = 50;
+        this.stickerRotation = 0;
+
+        const previewImg = document.getElementById('activeStickerPreviewImg');
+        previewImg.src = this.activeStickerDataUrl;
+
+        this.updateActiveStickerTransform();
+        document.getElementById('stickerAdjustContainer').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+
+        this.showToast('원하는 위치로 드래그하고 회전시켜보세요!', '👆');
+      }
+
+      updateActiveStickerTransform() {
+        const box = document.getElementById('activeStickerBox');
+        if (!box) return;
+        box.style.left = `${this.stickerPosX}%`;
+        box.style.top = `${this.stickerPosY}%`;
+        box.style.transform = `translate(-50%, -50%) rotate(${this.stickerRotation}deg)`;
+      }
+
+      setupStickerInteractions() {
+        const container = document.getElementById('stickerAdjustContainer');
+        const box = document.getElementById('activeStickerBox');
+        const rotateHandle = document.getElementById('stickerRotateHandle');
+        if (!container || !box || !rotateHandle) return;
+
+        const getCoord = (e) => {
+          if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          return { x: e.clientX, y: e.clientY };
+        };
+
+        const startRotate = (e) => {
+          e.stopPropagation();
+          this.isRotatingSticker = true;
+          this.isDraggingSticker = false;
+        };
+
+        rotateHandle.addEventListener('mousedown', startRotate);
+        rotateHandle.addEventListener('touchstart', startRotate, { passive: false });
+
+        const startDrag = (e) => {
+          if (this.isRotatingSticker) return;
+          this.isDraggingSticker = true;
+          const p = getCoord(e);
+          this.dragStartX = p.x;
+          this.dragStartY = p.y;
+        };
+
+        box.addEventListener('mousedown', startDrag);
+        box.addEventListener('touchstart', startDrag, { passive: false });
+
+        const moveAction = (e) => {
+          if (!this.isDraggingSticker && !this.isRotatingSticker) return;
+          if (e.cancelable) e.preventDefault();
+          const p = getCoord(e);
+          const rect = container.getBoundingClientRect();
+
+          if (this.isDraggingSticker) {
+            const dx = p.x - this.dragStartX;
+            const dy = p.y - this.dragStartY;
+            this.dragStartX = p.x;
+            this.dragStartY = p.y;
+
+            this.stickerPosX = Math.max(10, Math.min(90, this.stickerPosX + (dx / rect.width) * 100));
+            this.stickerPosY = Math.max(10, Math.min(90, this.stickerPosY + (dy / rect.height) * 100));
+            this.updateActiveStickerTransform();
+          } else if (this.isRotatingSticker) {
+            const boxRect = box.getBoundingClientRect();
+            const centerX = boxRect.left + boxRect.width / 2;
+            const centerY = boxRect.top + boxRect.height / 2;
+
+            const rad = Math.atan2(p.y - centerY, p.x - centerX);
+            let deg = rad * (180 / Math.PI) + 90;
+            this.stickerRotation = Math.round(deg);
+            this.updateActiveStickerTransform();
+          }
+        };
+
+        const stopAction = () => {
+          this.isDraggingSticker = false;
+          this.isRotatingSticker = false;
+        };
+
+        window.addEventListener('mousemove', moveAction);
+        window.addEventListener('mouseup', stopAction);
+        window.addEventListener('touchmove', moveAction, { passive: false });
+        window.addEventListener('touchend', stopAction);
+      }
+
+      async saveAdjustedSticker() {
+        if (!this.db || !this.currentViewingPost || !this.activeStickerDataUrl) return;
+
+        const newSticker = {
+          id: Date.now(),
+          authorId: this.myGlobalProfile.id,
+          authorName: this.myGlobalProfile.name || this.myGlobalProfile.handle,
+          data: this.activeStickerDataUrl,
+          x: Math.round(this.stickerPosX),
+          y: Math.round(this.stickerPosY),
+          rotate: this.stickerRotation
+        };
+
+        if (!this.currentViewingPost.stickers) {
+          this.currentViewingPost.stickers = [];
+        }
+        this.currentViewingPost.stickers.push(newSticker);
+        this.renderPostStickers(this.currentViewingPost);
+
+        const postRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'posts', this.currentViewingPost.id);
+        await updateDoc(postRef, {
+          stickers: arrayUnion(newSticker)
+        });
+
+        if (this.currentViewingPost.userId !== this.myGlobalProfile.id) {
+          const notiRef = doc(collection(this.db, 'artifacts', this.appId, 'public', 'data', 'notifications'));
+          await setDoc(notiRef, {
+            toUserId: this.currentViewingPost.userId,
+            fromUserId: this.myGlobalProfile.id,
+            fromUserName: this.myGlobalProfile.name || this.myGlobalProfile.handle,
+            fromUserAvatar: this.myGlobalProfile.avatar,
+            postId: this.currentViewingPost.id,
+            postDay: this.currentViewingPost.day,
+            type: 'sticker',
+            read: false,
+            createdAt: Date.now()
+          });
+        }
+
+        document.getElementById('stickerAdjustContainer').classList.add('hidden');
+        this.activeStickerDataUrl = null;
+
+        this.triggerCelebration();
+        this.showToast('스티커가 예쁘게 부착되었습니다!', '🎨');
+      }
+
+      cancelAdjustSticker() {
+        document.getElementById('stickerAdjustContainer').classList.add('hidden');
+        this.activeStickerDataUrl = null;
+      }
+
+      selectProfileSkin(skinClass) {
+        if (this.myGlobalCompletedStamps < 10 && skinClass !== 'skin-default' && !this.hasAdminFeaturePrivilege) {
+          alert('🔒 프로필 배경 스킨은 누적 10회 이상 인증 시 해금됩니다! (현재: ' + this.myGlobalCompletedStamps + '회)');
+          return;
+        }
+        this.tempSelectedSkin = skinClass;
+        document.querySelectorAll('.skin-btn').forEach(btn => {
+          const isMatch = btn.dataset.skin === skinClass;
+          btn.classList.toggle('border-neutral-900', isMatch);
+          btn.classList.toggle('border-neutral-200', !isMatch);
+        });
+      }
+
+      openEditProfileModal() {
+        const cur = this.myCurrentRoomProfile;
+        document.getElementById('editProfileRoomScopeLabel').innerText = `[${this.activeRoomCode}] 방 전용 프로필 편집`;
+        document.getElementById('editProfileAvatarPreview').src = cur.avatar;
+        document.getElementById('editProfileName').value = cur.name || '';
+        document.getElementById('editProfileHandle').value = cur.handle || '';
+        document.getElementById('editProfileBio').value = cur.bio || '';
+
+        this.selectProfileSkin(cur.skin || 'skin-default');
+        const lockedNotice = document.getElementById('skinLockedNotice');
+        if (this.myGlobalCompletedStamps >= 10 || this.hasAdminFeaturePrivilege) {
+          lockedNotice.innerText = this.hasAdminFeaturePrivilege ? '✨ 관리자 프리패스 적용' : '✨ 스킨 선택 가능';
+          lockedNotice.className = 'text-[10px] text-emerald-600 font-bold';
+        } else {
+          lockedNotice.innerText = `🔒 누적 10회 시 해금 (${this.myGlobalCompletedStamps}/10)`;
+          lockedNotice.className = 'text-[10px] text-neutral-400 font-bold';
+        }
+
+        const cheatSec = document.getElementById('adminCheatSection');
+        if (this.hasAdminFeaturePrivilege) {
+          cheatSec.classList.remove('hidden');
+          document.getElementById('cheatCurrentStampsVal').innerText = this.myGlobalCompletedStamps;
+          document.getElementById('cheatDirectInput').value = this.myGlobalCompletedStamps;
+        } else {
+          cheatSec.classList.add('hidden');
+        }
+
+        this.openModal('modalEditProfile');
+      }
+
+      async cheatSetStampsDirect() {
+        if (!this.db || !this.myGlobalProfile) return;
+        const val = parseInt(document.getElementById('cheatDirectInput').value);
+        if (isNaN(val) || val < 0) {
+          alert('0 이상의 숫자를 입력해주세요.');
+          return;
+        }
+
+        const userRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'user_profiles', this.myGlobalProfile.id);
+        await updateDoc(userRef, { totalCompletedStamps: val });
+        this.myGlobalProfile.totalCompletedStamps = val;
+        
+        if (this.roomData && this.roomData.members) {
+          const roomRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'rooms', this.activeRoomCode);
+          const members = this.roomData.members.map(m => {
+            if (m.id === this.myGlobalProfile.id) {
+              return { ...m, totalCompletedStamps: val };
+            }
+            return m;
+          });
+          await updateDoc(roomRef, { members });
+        }
+
+        this.renderBadges();
+        document.getElementById('cheatCurrentStampsVal').innerText = val;
+        this.showToast(`내 계정 누적 인증 수가 ${val}회로 변경되었습니다!`, '✅');
+      }
+
+      async cheatResetStamps() {
+        if (!this.db || !this.myGlobalProfile) return;
+        const ok = confirm('정말 내 누적 인증 수를 0회로 초기화하시겠습니까?');
+        if (!ok) return;
+
+        const userRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'user_profiles', this.myGlobalProfile.id);
+        await updateDoc(userRef, { totalCompletedStamps: 0 });
+        this.myGlobalProfile.totalCompletedStamps = 0;
+        
+        if (this.roomData && this.roomData.members) {
+          const roomRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'rooms', this.activeRoomCode);
+          const members = this.roomData.members.map(m => {
+            if (m.id === this.myGlobalProfile.id) {
+              return { ...m, totalCompletedStamps: 0 };
+            }
+            return m;
+          });
+          await updateDoc(roomRef, { members });
+        }
+
+        this.renderBadges();
+        document.getElementById('cheatCurrentStampsVal').innerText = 0;
+        document.getElementById('cheatDirectInput').value = 0;
+        this.showToast('내 누적 인증 수가 0회로 초기화되었습니다.', '🧹');
+      }
+
+      async saveProfileEdit() {
+        if (!this.db || !this.roomData) return;
+        const newName = document.getElementById('editProfileName').value.trim();
+        let newHandle = document.getElementById('editProfileHandle').value.trim().replace(/^@/, '');
+        const newBio = document.getElementById('editProfileBio').value.trim();
+        const newAvatar = document.getElementById('editProfileAvatarPreview').src;
+        
+        if(!newName) { alert("이름을 입력해주세요."); return; }
+        if(!newHandle) { alert("아이디를 입력해주세요."); return; }
+
+        // 1) 전역 프로필 저장
+        const userRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'user_profiles', this.myGlobalProfile.id);
+        await updateDoc(userRef, {
+          name: newName,
+          handle: newHandle,
+          bio: newBio,
+          avatar: newAvatar,
+          skin: this.tempSelectedSkin || 'skin-default'
+        });
+
+        // 2) 방 문서의 members 배열 업데이트
+        const updatedRoomMember = {
+          id: this.myGlobalProfile.id,
+          name: newName,
+          handle: newHandle,
+          bio: newBio,
+          // 🚨 [수정]: 200px 압축된 사진을 방 문서에도 정상 반영하도록 허용
+          avatar: newAvatar, 
+          skin: this.tempSelectedSkin || 'skin-default',
+          totalCompletedStamps: this.myGlobalCompletedStamps
+        };
+
+        const roomRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'rooms', this.activeRoomCode);
+        let members = this.roomData.members || [];
+        const idx = members.findIndex(m => m.id === this.myGlobalProfile.id);
+
+        if (idx >= 0) {
+          members[idx] = updatedRoomMember;
+        } else {
+          members.push(updatedRoomMember);
+        }
+
+        await updateDoc(roomRef, { members: members });
+
+        this.myGlobalProfile.name = newName;
+        this.myGlobalProfile.handle = newHandle;
+        this.myGlobalProfile.bio = newBio;
+        this.myGlobalProfile.avatar = newAvatar;
+        this.myGlobalProfile.skin = this.tempSelectedSkin;
+
+        this.closeModal('modalEditProfile');
+        this.renderAll();
+        this.showToast(`프로필이 저장되었습니다.`, "✨");
+      }
+
+      async saveCurrentStamp() {
+        if (!this.db) return;
+        const dateStr = document.getElementById('stampDate').value;
+        const caption = document.getElementById('stampCaption').value.trim();
+
+        if (!dateStr) { alert('날짜를 선택해주세요.'); return; }
+        const day = this.computeDayFromDate(dateStr);
+        if (day < 1) { alert('시작일 이전 날짜는 선택할 수 없습니다.'); return; }
+
+        const todayStr = this.getTodayDateString();
+        if (dateStr > todayStr) {
+          const ok = confirm(`⚠️ 미래 날짜(${dateStr})입니다.\n\n미래 날짜의 인증을 등록할 수는 있지만, 연속 달성(Streak) 기록이 깨지거나 꼬일 수 있습니다.\n\n그래도 등록하시겠습니까?`);
+          if (!ok) return;
+        }
+
+        if (this.hasPostOnDate(dateStr, this.editingPostId)) {
+          alert('해당 날짜에 이미 인증한 기록이 있습니다.');
+          return;
+        }
+
+        let finalData = '';
+        let extra = {};
+
+        if (this.stampMode === 'photo') {
+           if (!this.photoBase64) { alert('사진을 첨부해주세요!'); return; }
+           finalData = this.photoBase64;
+        } else if (this.stampMode === 'draw') {
+           const canvas = document.getElementById('freeDrawCanvas');
+           finalData = canvas.toDataURL('image/jpeg', 0.85);
+        } else if (this.stampMode === 'text') {
+           const textVal = document.getElementById('textCardInput').value.trim();
+           if (!textVal) { alert('내용을 입력해주세요!'); return; }
+           this.renderTextCard();
+           finalData = document.getElementById('textCardCanvas').toDataURL('image/jpeg', 0.9);
+           extra = { textCardContent: textVal, textCardTheme: this.textCardThemeIndex };
+        }
+
+        if (this.editingPostId) {
+          const updateData = { date: dateStr, day: day, caption: caption, type: this.stampMode, data: finalData, ...extra };
+          const postRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'posts', this.editingPostId);
+          await updateDoc(postRef, updateData);
+
+          this.editingPostId = null;
+          this.originalEditImage = null;
+          this.closeModal('modalStamp');
+          this.showToast('게시물이 수정되었습니다.', '✏️');
+          return;
+        }
+
+        const newPost = {
+          roomCode: this.activeRoomCode,
+          userId: this.myGlobalProfile.id,
+          day: day,
+          date: dateStr,
+          type: this.stampMode,
+          data: finalData,
+          caption: caption,
+          likedBy: [],
+          comments: [],
+          stickers: [],
+          timestamp: serverTimestamp(),
+          ...extra
+        };
+
+        const postRef = doc(collection(this.db, 'artifacts', this.appId, 'public', 'data', 'posts'));
+        await setDoc(postRef, newPost);
+
+        const userRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'user_profiles', this.myGlobalProfile.id);
+        await updateDoc(userRef, {
+          totalCompletedStamps: increment(1)
+        });
+        this.myGlobalProfile.totalCompletedStamps = (this.myGlobalProfile.totalCompletedStamps || 0) + 1;
+
+        if (this.roomData && this.roomData.members) {
+          const roomRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'rooms', this.activeRoomCode);
+          const members = this.roomData.members.map(m => {
+            if (m.id === this.myGlobalProfile.id) {
+              return { ...m, totalCompletedStamps: this.myGlobalProfile.totalCompletedStamps };
+            }
+            return m;
+          });
+          await updateDoc(roomRef, { members });
+        }
+
+        if (this.myGlobalProfile.totalCompletedStamps === 5) {
+          setTimeout(() => alert('🎉 축하합니다! 누적 5회 인증을 달성하여 [친구 글에 스티커 그리기 & 붙이기] 기능이 열렸습니다!'), 500);
+        } else if (this.myGlobalProfile.totalCompletedStamps === 10) {
+          setTimeout(() => alert('🎉 축하합니다! 누적 10회 인증을 달성하여 [프로필 배경 커스텀 스킨]이 해금되었습니다!'), 500);
+        }
+
+        if (day === this.roomData.goalDays || day % 10 === 0) this.triggerCelebration();
+        this.closeModal('modalStamp');
+        this.showToast(`게시되었습니다! (누적 ${this.myGlobalProfile.totalCompletedStamps}회 달성)`, "📸");
+      }
+
+      openEditRoomModal() {
+        if (!this.isRoomHost) {
+          alert('방장만 방 설정을 변경할 수 있습니다.');
+          return;
+        }
+        document.getElementById('editRoomTitle').value = this.roomData.title || '';
+        document.getElementById('editRoomGoalDays').value = this.roomData.goalDays || 100;
+        document.getElementById('editRoomStartDate').value = this.roomData.startDate || this.getTodayDateString();
+        document.getElementById('editRoomMaxMembers').value = this.roomData.maxMembers || 10;
+        document.getElementById('editRoomPassword').value = this.roomData.password || '';
+        
+        this.renderRoomMemberList();
+        this.openModal('modalEditRoom');
+      }
+
+      renderRoomMemberList() {
+        const listEl = document.getElementById('roomMemberList');
+        if (!listEl || !this.roomData) return;
+        listEl.innerHTML = '';
+
+        const hostId = this.roomData.hostId || this.roomData.members[0]?.id;
+
+        (this.roomData.members || []).forEach(member => {
+          const isHostMember = (member.id === hostId);
+          const isMe = (member.id === this.myGlobalProfile.id);
+
+          const div = document.createElement('div');
+          div.className = 'flex items-center justify-between p-2.5 bg-neutral-50 border border-neutral-200 rounded-xl';
+          div.innerHTML = `
+            <div class="flex items-center gap-2.5 min-w-0">
+              <img src="${member.avatar}" loading="lazy" decoding="async" class="w-8 h-8 rounded-full object-cover aspect-square shrink-0">
+              <div class="truncate">
+                <div class="text-xs font-bold text-neutral-900 truncate">${member.name || member.handle} ${isMe ? '(나)' : ''}</div>
+                <div class="text-[10px] text-neutral-400 font-mono">@${member.handle}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              ${isHostMember ? '<span class="text-[10px] bg-neutral-900 text-white font-bold px-2 py-0.5 rounded">방장</span>' : `<button type="button" onclick="window.app?.kickMember('${member.id}')" class="px-2.5 py-1 text-[11px] bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-lg transition">내보내기</button>`}
+            </div>
+          `;
+          listEl.appendChild(div);
+        });
+      }
+
+      async kickMember(userId) {
+        if (!this.db || !this.roomData || !this.isRoomHost) return;
+        const target = this.roomData.members.find(m => m.id === userId);
+        const targetName = target ? (target.name || target.handle) : '멤버';
+
+        const ok = confirm(`정말 "${targetName}" 님을 방에서 내보내시겠습니까?`);
+        if (!ok) return;
+
+        try {
+          const updatedMembers = this.roomData.members.filter(m => m.id !== userId);
+          const roomRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'rooms', this.activeRoomCode);
+          await updateDoc(roomRef, { members: updatedMembers });
+
+          this.renderRoomMemberList();
+          this.showToast(`"${targetName}" 님을 내보냈습니다.`, '👢');
+        } catch (err) {
+          console.error(err);
+          alert('멤버 내보내기 실패: ' + err.message);
+        }
+      }
+
+      async deleteCurrentRoom() {
+        if (!this.db || !this.roomData || !this.isRoomHost) return;
+        const ok = confirm(`⚠️ 정말 [${this.roomData.title}] 방을 폭파(삭제)하시겠습니까?\n방에 올라온 모든 인증글과 데이터가 영구 삭제됩니다!`);
+        if (!ok) return;
+
+        try {
+          const roomRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'rooms', this.activeRoomCode);
+          await deleteDoc(roomRef);
+
+          this.closeModal('modalEditRoom');
+          this.showToast('방이 삭제되었습니다.', '🗑️');
+          this.openRoomSwitchModal();
+        } catch (err) {
+          console.error(err);
+          alert('방 삭제 실패: ' + err.message);
+        }
+      }
+
+      async saveRoomSettings(e) {
+        if (e) e.preventDefault();
+        if (!this.db || !this.roomData || !this.isRoomHost) return;
+
+        const newTitle = document.getElementById('editRoomTitle').value.trim();
+        const newGoal = parseInt(document.getElementById('editRoomGoalDays').value);
+        const newStartDate = document.getElementById('editRoomStartDate').value;
+        const newMaxMembers = parseInt(document.getElementById('editRoomMaxMembers').value);
+        const newPassword = document.getElementById('editRoomPassword').value.trim();
+
+        if (!newTitle) { alert('방 이름을 입력해주세요.'); return; }
+        if (!newGoal || newGoal < 1) { alert('목표 일수는 1일 이상이어야 합니다.'); return; }
+        if (!newStartDate) { alert('시작 날짜를 선택해주세요.'); return; }
+        if (!newMaxMembers || newMaxMembers < 1) { alert('최대 인원수는 1명 이상이어야 합니다.'); return; }
+        
+        if (this.roomData.members && this.roomData.members.length > newMaxMembers) {
+          alert(`현재 참여 중인 인원(${this.roomData.members.length}명)보다 최대 인원수를 낮게 설정할 수 없습니다.`);
+          return;
+        }
+
+        try {
+          const roomRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'rooms', this.activeRoomCode);
+          await updateDoc(roomRef, {
+            title: newTitle,
+            goalDays: newGoal,
+            startDate: newStartDate,
+            maxMembers: newMaxMembers,
+            password: newPassword
+          });
+
+          this.closeModal('modalEditRoom');
+          this.showToast('방 설정이 저장되었습니다.', '⚙️');
+        } catch (err) {
+          console.error(err);
+          alert('방 설정 변경 실패: ' + err.message);
+        }
+      }
+
+      generateStoryShareCard(post) {
+        if (!post) return;
+        this.showToast("스토리 카드 생성 중...", "🎨");
+
+        const canvas = document.getElementById('storyGenCanvas');
+        const ctx = canvas.getContext('2d');
+        const W = 1080;
+        const H = 1920;
+
+        ctx.fillStyle = '#171717';
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.font = '900 48px "Grandiflora One", cursive';
+        ctx.fillText('100days.challenge', W / 2, 170);
+
+        const member = this.getLiveMember(post.userId) || this.myCurrentRoomProfile;
+        ctx.font = '500 24px system-ui, sans-serif';
+        ctx.fillStyle = '#737373';
+        ctx.fillText(`ROOM: ${this.roomData.title}`, W / 2, 220);
+
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const imgSize = 900;
+          const imgX = (W - imgSize) / 2;
+          const imgY = 320;
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(imgX, imgY, imgSize, imgSize, 28);
+          ctx.clip();
+          ctx.drawImage(img, imgX, imgY, imgSize, imgSize);
+          ctx.restore();
+
+          const cardY = 1270;
+          ctx.fillStyle = '#262626';
+          ctx.beginPath();
+          ctx.roundRect(imgX, cardY, imgSize, 340, 24);
+          ctx.fill();
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.textAlign = 'left';
+          ctx.font = '900 40px "Noto Sans KR", sans-serif';
+          ctx.fillText(`Day ${post.day} 완주`, imgX + 40, cardY + 75);
+
+          ctx.fillStyle = '#a3a3a3';
+          ctx.font = '500 26px "Noto Sans KR", sans-serif';
+          ctx.fillText(`${member.name || member.handle}`, imgX + 40, cardY + 130);
+
+          ctx.fillStyle = '#e5e5e5';
+          ctx.font = '400 24px "Noto Sans KR", sans-serif';
+          const captionText = post.caption ? `"${post.caption.substring(0, 60)}${post.caption.length > 60 ? '...' : ''}"` : `"${member.bio || '오늘의 챌린지 성공!'}"`;
+          ctx.fillText(captionText, imgX + 40, cardY + 200);
+
+          ctx.fillStyle = '#737373';
+          ctx.font = '500 20px system-ui, sans-serif';
+          ctx.fillText(`${post.date}`, imgX + 40, cardY + 280);
+
+          const a = document.createElement('a');
+          a.download = `100days_story_day${post.day}.jpg`;
+          a.href = canvas.toDataURL('image/jpeg', 0.95);
+          a.click();
+          this.showToast("스토리 카드가 다운로드되었습니다!", "📲");
+        };
+        img.src = post.data;
+      }
+
+      openEditPostModal(post) {
+        if (!post) return;
+        this.editingPostId = post.id;
+        this.originalEditImage = post.data;
+
+        document.getElementById('stampDate').value = post.date;
+        this.updateStampDayFromDate();
+        document.getElementById('stampCaption').value = post.caption || '';
+        document.getElementById('stampModalTitle').innerText = '게시물 수정';
+        document.getElementById('stampSubmitBtn').innerText = '수정 완료';
+
+        if (post.type === 'text') {
+          this.switchStampMode('text');
+          document.getElementById('textCardInput').value = post.textCardContent || '';
+          this.setTextCardTheme(post.textCardTheme || 0);
+        } else {
+          this.switchStampMode('photo');
+          this.photoBase64 = post.data;
+          document.getElementById('photoPreview').src = post.data;
+          document.getElementById('photoPreviewContainer').classList.remove('hidden');
+          document.getElementById('photoUploadUI').classList.add('hidden');
+        }
+
+        this.closeModal('modalPostDetail');
+        this.openModal('modalStamp');
+      }
+
+      async deletePost(postId) {
+        if (!this.db || !postId) return;
+        const ok = confirm('게시물을 삭제할까요?');
+        if (!ok) return;
+
+        await deleteDoc(doc(this.db, 'artifacts', this.appId, 'public', 'data', 'posts', postId));
+        this.closeModal('modalPostDetail');
+        this.showToast('게시물이 삭제되었습니다.', '🗑️');
+      }
+
+      updateDetailModalUI() {
+        const post = this.currentViewingPost;
+        if (!post) return;
+        
+        const likes = post.likedBy || [];
+        const isLiked = likes.includes(this.myGlobalProfile.id);
+        
+        document.getElementById('detailLikesCount').innerText = likes.length;
+        const heart = document.getElementById('detailHeartIcon');
+        if (isLiked) {
+          heart.classList.add('fill-rose-500', 'text-rose-500');
+          heart.classList.remove('text-neutral-800');
+        } else {
+          heart.classList.remove('fill-rose-500', 'text-rose-500');
+          heart.classList.add('text-neutral-800');
+        }
+
+        const list = document.getElementById('detailCommentsList');
+        list.innerHTML = '';
+        (post.comments || []).forEach(c => {
+          const liveMember = this.getLiveMember(c.authorId);
+          const displayName = this.formatUserDisplayName(liveMember, c.author);
+          list.innerHTML += `
+            <div class="flex items-start gap-1.5 leading-snug">
+              <span class="font-bold text-neutral-900 shrink-0">${displayName}:</span>
+              <span class="text-neutral-700 break-words">${c.text}</span>
+            </div>
+          `;
+        });
+      }
+
+      async toggleLike() {
+        if (!this.db) return;
+        const post = this.currentViewingPost;
+        const postRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'posts', post.id);
+        let likes = post.likedBy || [];
+        
+        if (likes.includes(this.myGlobalProfile.id)) {
+          likes = likes.filter(id => id !== this.myGlobalProfile.id);
+        } else {
+          likes.push(this.myGlobalProfile.id);
+          this.triggerCelebration();
+        }
+        await updateDoc(postRef, { likedBy: likes });
+      }
+
+      async submitPostComment(e) {
+        e.preventDefault();
+        if (!this.db) return;
+        const input = document.getElementById('detailCommentInput');
+        const text = input.value.trim();
+        if (!text) return;
+        
+        const post = this.currentViewingPost;
+        const postRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'posts', post.id);
+        
+        const myProfile = this.myCurrentRoomProfile;
+        const newComment = {
+          author: myProfile.name || myProfile.handle,
+          authorId: myProfile.id,
+          text: text,
+          time: new Date().toISOString()
+        };
+        
+        const comments = post.comments || [];
+        comments.push(newComment);
+        await updateDoc(postRef, { comments: comments });
+        input.value = '';
+
+        if (post.userId !== myProfile.id) {
+          const notiRef = doc(collection(this.db, 'artifacts', this.appId, 'public', 'data', 'notifications'));
+          await setDoc(notiRef, {
+            toUserId: post.userId,
+            fromUserId: myProfile.id,
+            fromUserName: myProfile.name || myProfile.handle,
+            fromUserAvatar: myProfile.avatar,
+            postId: post.id,
+            postDay: post.day,
+            textPreview: text.length > 20 ? text.substring(0, 20) + '...' : text,
+            type: 'comment',
+            read: false,
+            createdAt: Date.now()
+          });
+        }
+      }
+
+      // 💌 하이브리드 방명록 렌더링 (레거시 배열 + 신규 독립 컬렉션 완벽 병합)
+      renderCheerList() {
+  const list = document.getElementById('cheerList');
+  if (!list) return;
+  list.innerHTML = '';
+  
+  const m = this.viewingMember || this.myCurrentRoomProfile;
+  if (!m) return;
+
+  // 1) 레거시 방 문서 내의 cheers
+  const legacyCheers = (this.roomData?.cheers || []).map(c => ({
+    id: c.id || Math.random(),
+    toUserId: String(c.toUserId || ''),
+    fromUserId: String(c.fromUserId || ''),
+    author: c.author || '익명',
+    avatar: c.avatar,
+    text: c.text,
+    createdAt: c.time ? new Date(c.time).getTime() : (c.id || 0)
+  }));
+
+  // 2) 신규 cheers 컬렉션의 cheers
+  const newCheers = (this.cheers || []).map(c => ({
+    id: c.id,
+    toUserId: String(c.toUserId || ''),
+    fromUserId: String(c.fromUserId || ''),
+    author: c.author || '익명',
+    avatar: c.avatar,
+    text: c.text,
+    createdAt: c.createdAt || 0
+  }));
+
+  // 두 목록 합치기 (중복 제거)
+  const combined = [...legacyCheers];
+  newCheers.forEach(nc => {
+    if (!combined.some(lc => lc.text === nc.text && Math.abs(lc.createdAt - nc.createdAt) < 5000)) {
+      combined.push(nc);
+    }
+  });
+
+  // 대상 유저 ID 매칭 (ID 미지정 글이거나 이름/핸들로 저장되었던 옛날 글도 모두 포용)
+  const targetCheers = combined.filter(c => {
+    if (!c.toUserId || c.toUserId === 'undefined' || c.toUserId === 'null') return true;
+    return (
+      c.toUserId === m.id || 
+      c.toUserId === m.handle || 
+      c.toUserId === m.name
+    );
+  });
+
+  if (targetCheers.length === 0) {
+    list.innerHTML = `<p class="text-xs text-neutral-400 py-10 text-center">아직 남겨진 글이 없어요.</p>`;
+    return;
+  }
+
+  targetCheers.sort((a, b) => b.createdAt - a.createdAt).forEach(c => {
+    const liveMember = this.getLiveMember(c.fromUserId);
+    const displayName = this.formatUserDisplayName(liveMember, c.author);
+    const displayAvatar = (liveMember && liveMember.avatar) ? liveMember.avatar : (c.avatar || 'https://api.dicebear.com/7.x/notionists/svg?seed=Bear&backgroundColor=f3f4f6');
+    list.innerHTML += `
+      <div class="py-3 flex items-start gap-3">
+        <img src="${displayAvatar}" loading="lazy" decoding="async" class="w-8 h-8 rounded-full border border-neutral-100 object-cover shrink-0 aspect-square">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs text-neutral-900">${displayName}</span>
+          </div>
+          <p class="text-sm text-neutral-700 mt-0.5 leading-relaxed break-words">${c.text}</p>
+        </div>
+      </div>
+    `;
+  });
+}
+
+      async submitCheer(e) {
+        e.preventDefault();
+        if (!this.db || !this.activeRoomCode) return;
+        const input = document.getElementById('cheerInput');
+        const text = input.value.trim();
+        if(!text) return;
+        
+        const target = this.viewingMember || this.myCurrentRoomProfile;
+        const myProfile = this.myCurrentRoomProfile;
+
+        if (!target?.id || !myProfile?.id) {
+          alert("사용자 정보를 확인할 수 없습니다.");
+          return;
+        }
+
+        try {
+          const cheerRef = doc(collection(this.db, 'artifacts', this.appId, 'public', 'data', 'cheers'));
+          await setDoc(cheerRef, {
+            roomCode: this.activeRoomCode,
+            toUserId: String(target.id),
+            fromUserId: String(myProfile.id),
+            author: String(myProfile.name || myProfile.handle || '익명'),
+            avatar: (myProfile.avatar && myProfile.avatar.startsWith('http')) ? myProfile.avatar : '',
+            text: text,
+            createdAt: Date.now()
+          });
+          
+          input.value = '';
+          this.triggerCelebration();
+          this.showToast("응원을 보냈습니다.", "💌");
+        } catch (err) {
+          console.error("방명록 저장 에러:", err);
+          alert("방명록 저장에 실패했습니다: " + err.message);
+        }
+      }
+
+      toggleNavDropdown(e) {
+        if(e) e.stopPropagation();
+        this.closeNotiDropdown();
+        const menu = document.getElementById('navDropdownMenu');
+        const chevron = document.getElementById('navDropdownChevron');
+        if (menu.classList.contains('hidden')) {
+          menu.classList.remove('hidden');
+          if (chevron) chevron.classList.add('rotate-180');
+        } else {
+          this.closeNavDropdown();
+        }
+      }
+      closeNavDropdown() {
+        document.getElementById('navDropdownMenu')?.classList.add('hidden');
+        document.getElementById('navDropdownChevron')?.classList.remove('rotate-180');
+      }
+
+      openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
+      closeModal(id) {
+        document.getElementById(id)?.classList.add('hidden');
+        if (id === 'modalCreateRoom' && this.isOnboardingCreate && !this.activeRoomCode) {
+          this.isOnboardingCreate = false;
+          document.getElementById('landingOverlay').classList.remove('opacity-0', 'pointer-events-none');
+          document.getElementById('loginStep2').classList.remove('hidden');
+        }
+      }
+
+      showToast(msg, icon = '✨') {
+        const toast = document.getElementById('toast');
+        document.getElementById('toastMsg').innerText = msg;
+        document.getElementById('toastIcon').innerText = icon;
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        clearTimeout(this.toastTimer);
+        this.toastTimer = setTimeout(() => {
+          toast.classList.add('translate-y-20', 'opacity-0');
+        }, 2500);
+      }
+
+      copyRoomCode() {
+        navigator.clipboard.writeText(this.activeRoomCode).then(()=>{
+          this.showToast(`[${this.activeRoomCode}] 복사 완료`, "📋");
+        }).catch(() => {
+          const temp = document.createElement('textarea');
+          temp.value = this.activeRoomCode;
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand('copy');
+          document.body.removeChild(temp);
+          this.showToast(`[${this.activeRoomCode}] 복사 완료`, "📋");
+        });
+      }
+
+      triggerCelebration() {
+        if (window.confetti) confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 } });
+      }
+
+      openStampModal() {
+        if (!this.isRoomHost && this.roomData && this.roomData.code === 'CHAL-100') {
+          alert('CHAL-100 방은 구경 전용 안내 방입니다. 인증하려면 [내 다른 방 이동]이나 [새 방 만들기]를 이용해주세요!');
+          return;
+        }
+
+        this.editingPostId = null;
+        this.originalEditImage = null;
+
+        document.getElementById('stampModalTitle').innerText = '새 게시물 만들기';
+        document.getElementById('stampSubmitBtn').innerText = '피드에 올리기';
+
+        const todayStr = this.getTodayDateString();
+        const dateInput = document.getElementById('stampDate');
+        dateInput.value = todayStr;
+        dateInput.min = this.roomData.startDate;
+        this.updateStampDayFromDate();
+
+        document.getElementById('stampCaption').value = '';
+        document.getElementById('textCardInput').value = '';
+
+        this.setTextCardTheme(0);
+        this.switchStampMode('photo');
+        this.clearCanvas();
+        this.photoBase64 = null;
+        document.getElementById('photoPreviewContainer').classList.add('hidden');
+        document.getElementById('photoUploadUI').classList.remove('hidden');
+        document.getElementById('photoStatText').innerText = '1:1 크롭 & 타임스탬프';
+
+        this.openModal('modalStamp');
+      }
+
+      computeDayFromDate(dateStr) {
+        if (!dateStr || !this.roomData || !this.roomData.startDate) return 1;
+        const start = new Date(this.roomData.startDate + 'T00:00:00');
+        const target = new Date(dateStr + 'T00:00:00');
+        const diffDays = Math.round((target - start) / (1000 * 60 * 60 * 24)) + 1;
+        return diffDays;
+      }
+
+      updateStampDayFromDate() {
+        const dateStr = document.getElementById('stampDate').value;
+        const day = this.computeDayFromDate(dateStr);
+        document.getElementById('stampDayLabel').innerText = `Day ${day}`;
+        if (this.stampMode === 'text') this.renderTextCard();
+      }
+
+      hasPostOnDate(dateStr, excludePostId) {
+        return this.posts.some(p => p.userId === this.myGlobalProfile.id && p.date === dateStr && p.id !== excludePostId);
+      }
+
+      switchStampMode(mode) {
+        this.stampMode = mode;
+        const tabs = { photo: document.getElementById('tabMode-photo'), draw: document.getElementById('tabMode-draw'), text: document.getElementById('tabMode-text') };
+        const panels = { photo: document.getElementById('modePanel-photo'), draw: document.getElementById('modePanel-draw'), text: document.getElementById('modePanel-text') };
+
+        const activeCls = ['bg-white', 'shadow-sm', 'text-neutral-900'];
+        const inactiveCls = ['text-neutral-500', 'hover:text-neutral-900'];
+
+        Object.keys(tabs).forEach(key => {
+          if (!tabs[key] || !panels[key]) return;
+          if (key === mode) {
+            tabs[key].classList.add(...activeCls); tabs[key].classList.remove(...inactiveCls);
+            panels[key].classList.remove('hidden');
+          } else {
+            tabs[key].classList.add(...inactiveCls); tabs[key].classList.remove(...activeCls);
+            panels[key].classList.add('hidden');
+          }
+        });
+
+        if (mode === 'text') this.renderTextCard();
+      }
+
+      setTextCardTheme(i) {
+        this.textCardThemeIndex = i;
+        document.querySelectorAll('[data-theme-swatch]').forEach(el => {
+          const isActive = parseInt(el.dataset.themeSwatch) === i;
+          el.classList.toggle('border-neutral-900', isActive);
+          el.classList.toggle('border-neutral-200', !isActive);
+        });
+        this.renderTextCard();
+      }
+
+      renderTextCard() {
+        const canvas = document.getElementById('textCardCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const size = canvas.width;
+        const theme = this.textCardThemes[this.textCardThemeIndex] || this.textCardThemes[0];
+
+        if (theme.gradient) {
+          const g = ctx.createLinearGradient(0, 0, size, size);
+          g.addColorStop(0, theme.colors[0]);
+          g.addColorStop(1, theme.colors[1]);
+          ctx.fillStyle = g;
+        } else {
+          ctx.fillStyle = theme.colors[0];
+        }
+        ctx.fillRect(0, 0, size, size);
+
+        const inputEl = document.getElementById('textCardInput');
+        const rawText = (inputEl ? inputEl.value.trim() : '') || '오늘의 한마디를\n적어보세요';
+
+        ctx.fillStyle = theme.textColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const maxWidth = size * 0.78;
+        const maxBlockHeight = size * 0.56;
+        let fontSize = 44;
+        const minFontSize = 20;
+        let lines = [];
+
+        while (fontSize >= minFontSize) {
+          ctx.font = `900 ${fontSize}px "Noto Sans KR", sans-serif`;
+          lines = this.wrapTextForCanvas(ctx, rawText, maxWidth);
+          const lineHeight = fontSize * 1.4;
+          if (lines.length * lineHeight <= maxBlockHeight || fontSize === minFontSize) break;
+          fontSize -= 2;
+        }
+
+        ctx.font = `900 ${fontSize}px "Noto Sans KR", sans-serif`;
+        const lineHeight = fontSize * 1.4;
+        const startY = size / 2 - ((lines.length - 1) * lineHeight) / 2;
+        lines.forEach((line, i) => ctx.fillText(line, size / 2, startY + i * lineHeight));
+
+        const dayLabel = document.getElementById('stampDayLabel')?.innerText || 'Day 1';
+        const dateStr = document.getElementById('stampDate')?.value || '';
+        ctx.globalAlpha = 0.5;
+        ctx.font = `500 14px system-ui, sans-serif`;
+        ctx.fillText(`${dayLabel}${dateStr ? ' · ' + dateStr : ''}`, size / 2, size - 48);
+        ctx.font = `900 16px "Grandiflora One", cursive`;
+        ctx.fillText('100days.challenge', size / 2, size - 26);
+        ctx.globalAlpha = 1;
+      }
+
+      wrapTextForCanvas(ctx, text, maxWidth) {
+        const lines = [];
+        text.split('\n').forEach(paragraph => {
+          const words = paragraph.split(' ');
+          let current = '';
+          words.forEach(word => {
+            if (ctx.measureText(word).width > maxWidth) {
+              if (current) { lines.push(current); current = ''; }
+              let chunk = '';
+              for (const ch of word) {
+                const test = chunk + ch;
+                if (ctx.measureText(test).width > maxWidth && chunk) {
+                  lines.push(chunk); chunk = ch;
+                } else {
+                  chunk = test;
+                }
+              }
+              current = chunk;
+            } else {
+              const test = current ? current + ' ' + word : word;
+              if (ctx.measureText(test).width > maxWidth && current) {
+                lines.push(current); current = word;
+              } else {
+                current = test;
+              }
+            }
+          });
+          lines.push(current);
+        });
+        return lines;
+      }
+
+      async handlePhotoUpload(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        try {
+          const dataUrl = await this.readFileAsDataURL(file);
+          this.cropTarget = 'post';
+          await this.openCropper(dataUrl);
+        } catch(err) {
+          console.error(err);
+          alert('사진을 불러오는 중 오류가 발생했습니다.');
+        } finally {
+          e.target.value = '';
+        }
+      }
+
+      async handleProfileImageUpload(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        try {
+          const dataUrl = await this.readFileAsDataURL(file);
+          this.cropTarget = 'profile';
+          await this.openCropper(dataUrl);
+        } catch(err) {
+          console.error(err);
+          alert('사진을 불러오는 중 오류가 발생했습니다.');
+        } finally {
+          e.target.value = '';
+        }
+      }
+
+      readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      openCropper(dataUrl) {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            this.cropImg = img;
+            this.cropZoom = 100;
+            document.getElementById('cropperZoom').value = 100;
+            document.getElementById('cropperImage').src = dataUrl;
+
+            const stickerToggle = document.getElementById('cropTimestampContainer');
+            const titleEl = document.getElementById('cropperModalTitle');
+            if (this.cropTarget === 'profile') {
+              stickerToggle.classList.add('hidden');
+              titleEl.innerText = '프로필 사진 자르기 (1:1)';
+            } else {
+              stickerToggle.classList.remove('hidden');
+              titleEl.innerText = '인증 사진 자르기 (1:1)';
+            }
+
+            this.openModal('modalCropper');
+            requestAnimationFrame(() => {
+              this.resetCropTransform();
+              resolve();
+            });
+          };
+          img.onerror = () => resolve();
+          img.src = dataUrl;
+        });
+      }
+
+      resetCropTransform() {
+        const viewport = document.getElementById('cropperViewport');
+        if (!viewport || !this.cropImg) return;
+        const V = viewport.clientWidth;
+        this.cropViewportSize = V;
+        this.cropBaseScale = V / Math.min(this.cropImg.naturalWidth, this.cropImg.naturalHeight);
+        this.applyCropTransformStyle(true);
+      }
+
+      applyCropTransformStyle(center) {
+        if (!this.cropImg) return;
+        const V = this.cropViewportSize;
+        const scale = this.cropBaseScale * (this.cropZoom / 100);
+        const dispW = this.cropImg.naturalWidth * scale;
+        const dispH = this.cropImg.naturalHeight * scale;
+
+        if (center) {
+          this.cropOffsetX = Math.min(0, (V - dispW) / 2);
+          this.cropOffsetY = Math.min(0, (V - dispH) / 2);
+        } else {
+          this.cropOffsetX = this.clampNum(this.cropOffsetX, V - dispW, 0);
+          this.cropOffsetY = this.clampNum(this.cropOffsetY, V - dispH, 0);
+        }
+
+        const imgEl = document.getElementById('cropperImage');
+        imgEl.style.width = dispW + 'px';
+        imgEl.style.height = dispH + 'px';
+        imgEl.style.transform = `translate(${this.cropOffsetX}px, ${this.cropOffsetY}px)`;
+      }
+
+      clampNum(v, min, max) {
+        if (min > max) return (min + max) / 2;
+        return Math.min(Math.max(v, min), max);
+      }
+
+      onCropZoomChange(value) {
+        this.cropZoom = parseFloat(value);
+        this.applyCropTransformStyle(false);
+      }
+
+      setupCropperDrag() {
+        const viewport = document.getElementById('cropperViewport');
+        if (!viewport) return;
+        let dragging = false;
+        let startX = 0, startY = 0, startOffX = 0, startOffY = 0;
+
+        const getPoint = (e) => {
+          if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          return { x: e.clientX, y: e.clientY };
+        };
+
+        const start = (e) => {
+          if (!this.cropImg) return;
+          dragging = true;
+          const p = getPoint(e);
+          startX = p.x; startY = p.y;
+          startOffX = this.cropOffsetX; startOffY = this.cropOffsetY;
+        };
+        const move = (e) => {
+          if (!dragging) return;
+          if (e.cancelable) e.preventDefault();
+          const p = getPoint(e);
+          this.cropOffsetX = startOffX + (p.x - startX);
+          this.cropOffsetY = startOffY + (p.y - startY);
+          this.applyCropTransformStyle(false);
+        };
+        const end = () => { dragging = false; };
+
+        viewport.addEventListener('mousedown', start);
+        window.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', end);
+        viewport.addEventListener('touchstart', start, { passive: true });
+        viewport.addEventListener('touchmove', move, { passive: false });
+        viewport.addEventListener('touchend', end);
+      }
+
+      applyCrop() {
+        if (!this.cropImg) return;
+        const V = this.cropViewportSize;
+        const scale = this.cropBaseScale * (this.cropZoom / 100);
+        const cropXNatural = (0 - this.cropOffsetX) / scale;
+        const cropYNatural = (0 - this.cropOffsetY) / scale;
+        const cropSizeNatural = V / scale;
+
+        const outputSize = this.cropTarget === 'profile' ? 200 : 640;
+        const canvas = document.createElement('canvas');
+        canvas.width = outputSize; canvas.height = outputSize;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(this.cropImg, cropXNatural, cropYNatural, cropSizeNatural, cropSizeNatural, 0, 0, outputSize, outputSize);
+
+        if (this.cropTarget === 'post') {
+          const needSticker = document.getElementById('cropTimestampToggle')?.checked;
+          if (needSticker) {
+            const dateStr = document.getElementById('stampDate').value;
+            const day = this.computeDayFromDate(dateStr);
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+            const badgeW = 210;
+            const badgeH = 46;
+            const badgeX = outputSize - badgeW - 18;
+            const badgeY = outputSize - badgeH - 18;
+            ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 12);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.font = '900 15px system-ui, sans-serif';
+            ctx.fillText(`Day ${day}`, badgeX + (badgeW / 2), badgeY + 20);
+            ctx.font = '500 11px system-ui, sans-serif';
+            ctx.fillStyle = '#a3a3a3';
+            ctx.fillText(`${dateStr}`, badgeX + (badgeW / 2), badgeY + 36);
+            ctx.restore();
+          }
+        }
+
+        const quality = this.cropTarget === 'profile' ? 0.65 : 0.85;
+        const finalDataUrl = canvas.toDataURL('image/jpeg', quality);
+
+        if (this.cropTarget === 'profile') {
+          document.getElementById('editProfileAvatarPreview').src = finalDataUrl;
+          this.showToast("프로필 사진이 크롭되었습니다.", "✨");
+        } else {
+          this.photoBase64 = finalDataUrl;
+          document.getElementById('photoPreview').src = finalDataUrl;
+          document.getElementById('photoPreviewContainer').classList.remove('hidden');
+          document.getElementById('photoUploadUI').classList.add('hidden');
+        }
+
+        this.closeModal('modalCropper');
+        this.cropImg = null;
+      }
+
+      cancelCrop() {
+        this.closeModal('modalCropper');
+        this.cropImg = null;
+      }
+
+      setupCanvas() {
+        const canvas = document.getElementById('freeDrawCanvas');
+        if (!canvas) return;
+        this.canvasCtx = canvas.getContext('2d');
+        this.clearCanvas();
+
+        const getPos = (e) => {
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = canvas.width / rect.width;
+          const scaleY = canvas.height / rect.height;
+          let clientX = e.clientX; let clientY = e.clientY;
+          if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+          return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+        };
+
+        const startDraw = (e) => { this.isDrawing = true; this.draw(e); };
+        const stopDraw = () => { this.isDrawing = false; this.canvasCtx.beginPath(); };
+
+        canvas.addEventListener('mousedown', startDraw);
+        canvas.addEventListener('mousemove', (e) => this.draw(e));
+        window.addEventListener('mouseup', stopDraw);
+        
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); }, {passive:false});
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); }, {passive:false});
+        canvas.addEventListener('touchend', stopDraw);
+      }
+
+      draw(e) {
+        if (!this.isDrawing) return;
+        const canvas = document.getElementById('freeDrawCanvas');
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let cx = e.clientX; let cy = e.clientY;
+        if(e.touches && e.touches.length > 0) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+        const x = (cx - rect.left) * scaleX;
+        const y = (cy - rect.top) * scaleY;
+
+        this.canvasCtx.lineWidth = 8;
+        this.canvasCtx.lineCap = 'round';
+        this.canvasCtx.lineTo(x, y);
+        this.canvasCtx.stroke();
+        this.canvasCtx.beginPath();
+        this.canvasCtx.moveTo(x, y);
+      }
+
+      setPenColor(color) { this.canvasCtx.strokeStyle = color; }
+      clearCanvas() {
+        const canvas = document.getElementById('freeDrawCanvas');
+        this.canvasCtx.fillStyle = '#f8f9fa';
+        this.canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+        this.canvasCtx.strokeStyle = '#171717';
+      }
+
+      async openRoomSwitchModal() {
+        if (!this.db) return;
+        const list = document.getElementById('roomSelectList');
+        list.innerHTML = '<p class="text-center text-xs text-neutral-400 my-4">방 목록 로딩 중...</p>';
+        this.openModal('modalSwitchRoom');
+
+        const roomsQuery = query(collection(this.db, 'artifacts', this.appId, 'public', 'data', 'rooms'));
+        const snap = await getDocs(roomsQuery);
+        
+        const myRooms = [];
+        snap.forEach(d => {
+          const r = d.data();
+          if (r.members && r.members.some(m => m.id === this.myGlobalProfile.id)) {
+            myRooms.push(r);
+          }
+        });
+
+        list.innerHTML = '';
+        myRooms.forEach(r => {
+           const isHost = r.hostId ? (r.hostId === this.myGlobalProfile.id) : (r.members[0]?.id === this.myGlobalProfile.id);
+           const div = document.createElement('div');
+           div.className = `p-3 border rounded-xl flex justify-between items-center cursor-pointer transition ${r.code === this.activeRoomCode ? 'border-neutral-900 bg-neutral-50 shadow-sm' : 'border-neutral-200 hover:bg-neutral-50'}`;
+           div.onclick = () => {
+             this.joinRoomAndSubscribe(r.code);
+             this.closeModal('modalSwitchRoom');
+           };
+           div.innerHTML = `
+             <div class="flex flex-col">
+               <div class="flex items-center gap-1.5">
+                 <span class="font-bold text-sm text-neutral-900">${r.title}</span>
+                 ${isHost ? '<span class="bg-neutral-900 text-white text-[9px] px-1 rounded font-bold">방장</span>' : ''}
+               </div>
+               <span class="text-[10px] text-neutral-400 font-mono">${r.code} (${r.goalDays}일)</span>
+             </div>
+             ${r.code === this.activeRoomCode ? '<div class="w-2 h-2 rounded-full bg-neutral-900"></div>' : ''}
+           `;
+           list.appendChild(div);
+        });
+      }
+
+      async joinRoomByCode() {
+        const code = document.getElementById('joinRoomInput').value.trim().toUpperCase();
+        const pw = document.getElementById('joinRoomPasswordInput').value;
+        if(!code) return;
+        await this.joinRoomAndSubscribe(code, pw);
+        this.closeModal('modalSwitchRoom');
+        document.getElementById('joinRoomInput').value = '';
+        document.getElementById('joinRoomPasswordInput').value = '';
+      }
+
+      openCreateRoomModal() {
+        this.closeModal('modalSwitchRoom');
+        this.openModal('modalCreateRoom');
+        this.setCreateDays(100);
+      }
+
+      setCreateDays(days) {
+        this.createDays = days;
+        document.querySelectorAll('.create-day-btn').forEach(b => {
+           if(parseInt(b.dataset.days) === days) b.className = 'create-day-btn py-2 border-2 border-neutral-900 rounded-lg font-bold text-sm text-neutral-900 bg-neutral-100 transition';
+           else b.className = 'create-day-btn py-2 border border-neutral-200 rounded-lg font-bold text-sm text-neutral-600 bg-neutral-50 hover:border-neutral-900 transition';
+        });
+        const customInput = document.getElementById('createDaysCustom');
+        if (customInput) customInput.value = '';
+      }
+
+      setCreateDaysCustom(value) {
+        const num = parseInt(value);
+        if (!num || num < 1) return;
+        this.createDays = num;
+        document.querySelectorAll('.create-day-btn').forEach(b => {
+           b.className = 'create-day-btn py-2 border border-neutral-200 rounded-lg font-bold text-sm text-neutral-600 bg-neutral-50 hover:border-neutral-900 transition';
+        });
+      }
+
+      async createNewRoom(e) {
+        if(e) e.preventDefault();
+        if (!this.db) return;
+        const title = document.getElementById('createRoomTitle').value.trim();
+        const maxMembers = parseInt(document.getElementById('createRoomMaxMembers').value) || 10;
+        const password = document.getElementById('createRoomPassword').value.trim();
+
+        if(!title) { alert('방 이름을 입력해주세요!'); return; }
+
+        const randomCode = `GOAL-${Math.floor(1000 + Math.random() * 9000)}`;
+        const roomRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'rooms', randomCode);
+        
+        await setDoc(roomRef, {
+          code: randomCode,
+          title: title,
+          hostId: this.myGlobalProfile.id,
+          goalDays: this.createDays,
+          maxMembers: maxMembers,
+          password: password,
+          startDate: this.getTodayDateString(),
+          members: [this.myGlobalProfile],
+          cheers: []
+        });
+
+        this.isOnboardingCreate = false;
+        this.closeModal('modalCreateRoom');
+        await this.joinRoomAndSubscribe(randomCode);
+        this.triggerCelebration();
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', () => {
+        window.app = new ChallengeApp();
+        window.app.init();
+      });
+    } else {
+      window.app = new ChallengeApp();
+      window.app.init();
+    }
+  </script>
+</body>
+</html>
